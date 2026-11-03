@@ -1,0 +1,49 @@
+# Flutter and Dart generate these directories locally. They are reproducible,
+# so committing them would make the repository larger without preserving work.
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# 沿用本仓库“不提交生成物”的约定：Drift 代码在本机与 CI 中生成。
+# 拉取源码后，先执行 dart run build_runner build，再分析、测试或运行。
+*.g.dart
+
+# 本地梦境是用户私有数据，绝不能随源代码提交。SQLite 写入时还可能产生
+# journal / WAL / SHM 辅助文件，它们同样不是项目源文件。
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Flutter writes plugin registries from pubspec.yaml. They should be rebuilt by
+# `flutter pub get` on each developer's machine.
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Editors keep personal settings here. The source code must not depend on them.
+.idea/
+.vscode/
+*.iml
+
+# macOS creates this metadata file when a folder is opened in Finder.
+.DS_Store
+
+# Android and iOS build tools create machine-specific files in these paths.
+android/.gradle/
+android/.kotlin/
+android/local.properties
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/.symlinks/
+
+# These folders belong to the local Codex workspace, not to the application.
+work/
+outputs/
+
+# Secrets must never enter version control. A future service can provide an
+# `.env.example`, but the real `.env` always stays local.
+.env
+.env.*
+!.env.example

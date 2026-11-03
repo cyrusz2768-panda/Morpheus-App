@@ -91,6 +91,17 @@ UI / 界面层
 
 项目处于 **Version 0.1 规划与开发阶段**。
 
+### 当前 M1 已接入
+
+- Flutter Android / iOS 工程骨架，Riverpod 状态管理与 go_router 路由。
+- 当天梦境的编辑、800ms 防抖自动保存、清空后删除。
+- Drift / SQLite 文件持久化、同日唯一、保存失败保留草稿并重试。
+- 28 项自动化测试，覆盖真实文件关闭重开、默认后台连接和页面交互。
+
+**验证边界：** 自动测试已通过，但 Android / iOS 设备上的完整重启验收尚未完成。当前 Android 首次构建还需补齐指定 SDK/NDK 并处理下载失败；本次不能标记整个 M1 或 Version 0.1 完成。数据库目前未加密，提醒、日历、健康数据和 AI 尚未实现。
+
+学习说明与操作步骤见 [M1 数据库接入说明](docs/M1_SQLITE_GUIDE.md)，目录职责见 [Flutter 工程说明](docs/FLUTTER_PROJECT_SKELETON.md)。原有需求、计划、许可证及开发日志继续保留。
+
 Version 0.1 目标：
 
 > 完成一个能够正常运行的版本，实现最核心的功能：  
@@ -108,22 +119,33 @@ Version 0.1 暂不包含：
 
 ### 环境要求
 
-- Flutter 3.x
-- Dart 3.x
-- Xcode / Android Studio
-- iOS 真机，用于测试 HealthKit 与通知
-- Android 真机，用于测试 Health Connect 与通知
+- Flutter 3.44 或更新的兼容稳定版；本次验证使用 Flutter 3.47.7。
+- Dart >=3.12 且 <4.0，由 Flutter SDK 自带。
+- 安卓运行环境：Android Studio、Android SDK Platform 36、Build-Tools 36.0.0、NDK 28.2.13676358，以及安卓模拟器或设备。
+- iOS 运行环境：仅在开发 iOS 时安装并配置完整 Xcode 及相应依赖；不要求先配好 iOS 才能开发安卓。
+- 后续 HealthKit / Health Connect 与通知验证需要相应真机，不是当前自动化测试的前置条件。
 
 ### 克隆与运行
 
 ```bash
-git clone https://github.com/your-org/morpheus.git
-cd morpheus
+git clone https://github.com/cyrusz2768-panda/Morpheus-App.git
+cd Morpheus-App
 flutter pub get
+dart run build_runner build
+flutter analyze
+flutter test
 flutter run
 ```
 
+打开 VS Code 时选择整个 `Morpheus-App` 文件夹，即包含 `pubspec.yaml` 的工程根目录。Drift 的 `.g.dart` 按本仓库规范不提交，首次克隆、拉取数据库结构变更后必须先运行上面的代码生成命令；不要手改生成文件或手工建立数据库。
+
+若 Flutter 卡在 GitHub 更新检查，可把 Flutter 命令改为 `flutter --no-version-check pub get`、`flutter --no-version-check test` 或 `flutter --no-version-check run`。这只跳过查新，不绕过依赖下载、许可证或构建错误。新增原生依赖后应停止旧 App 完整重建，不能只用 Hot Reload。
+
+验收持久化：输入文字，等“已保存”后完整退出，在同一天、同一设备重开，正文应恢复。不要卸载、清除应用数据或使用模拟器 Wipe Data。详细步骤和故障边界见 [接入说明](docs/M1_SQLITE_GUIDE.md)。
+
 ### 权限配置
+
+以下为后续提醒与健康数据功能的配置规划，当前本地梦境编辑功能不需要预先添加这些权限。
 
 iOS：
 

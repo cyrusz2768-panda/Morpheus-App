@@ -1,0 +1,25 @@
+# This file configures Dart's static analyzer. Static analysis finds many
+# mistakes before the application is launched, similar to compiler warnings in
+# C++, but with rules tailored to Dart and Flutter.
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    # Local tooling and Codex artifacts are not part of the application.
+    - work/**
+    - outputs/**
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Single quotes are the common Dart style for ordinary strings.
+    prefer_single_quotes: true
+
+    # Const widgets can be reused by Flutter instead of being rebuilt. The
+    # analyzer will point out places where `const` is safe and useful.
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+
+    # Explicit return types make teaching code and public APIs easier to read.
+    always_declare_return_types: true

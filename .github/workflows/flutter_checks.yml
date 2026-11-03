@@ -1,0 +1,42 @@
+# This workflow gives every pushed change the same automated quality checks.
+# GitHub Actions runs on a clean machine, catching missing files or dependencies
+# that might be hidden by a developer's local cache.
+name: Flutter checks
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # subosito/flutter-action is a widely used community action. Pinning the
+      # stable channel keeps practice-project setup simple. A production project
+      # should additionally pin an exact Flutter version after it is selected.
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 生成物不提交到仓库；干净机器必须先从表定义生成 Drift 访问代码。
+      - name: Generate Drift database code
+        run: dart run build_runner build
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Run static analysis
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
