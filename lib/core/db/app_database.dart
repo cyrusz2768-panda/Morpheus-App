@@ -4,7 +4,8 @@ import 'package:morpheus/core/db/tables/dream_records.dart';
 import 'package:path_provider/path_provider.dart';
 
 // part 表示这两个 Dart 文件共同组成一个库，允许生成器扩展当前数据库类。
-// 首次运行 build_runner 后就会出现这个文件；它也会随项目一起提交到 Git。
+// 首次克隆或表结构变更后，运行 dart run build_runner build 生成此文件。
+// 按仓库规范不提交 .g.dart；GitHub Actions 也会在检查前自动生成。
 part 'app_database.g.dart';
 
 /// 应用唯一的数据库入口，集中管理连接、表定义和数据库版本。
