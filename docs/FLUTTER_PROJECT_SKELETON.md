@@ -84,7 +84,7 @@ lib/
 
 #### `lib/app/router.dart`
 
-集中声明页面地址和页面之间的导航关系。当前只有梦境编辑页。后续里程碑可以添加：
+集中声明页面地址和页面之间的导航关系。当前有梦境编辑页 `/` 与历史页 `/history`。后续里程碑可以添加：
 
 ```text
 /calendar   日历回顾
@@ -100,7 +100,7 @@ lib/
 
 ### 3.2 `lib/features/`
 
-按用户能够理解的功能组织代码。当前只有 `dream_editor`，未来可以逐步增加 `calendar`、`notifications`、`health` 和 `settings`。
+按用户能够理解的功能组织代码。当前有 `dream_editor` 与 `dream_history`，未来可以逐步增加 `calendar`、`notifications`、`health` 和 `settings`。
 
 每个功能内部再按职责划分：
 
@@ -261,7 +261,7 @@ Controller 和页面不需要理解 SQL。本次已经在 `dreamRepositoryProvid
 
 ### 6.2 日历与历史记录
 
-日历功能需要 Repository 新增按日期范围查询的方法。它会复用 `DreamEntry`，并在路由中新增 `/calendar`。因此当前的模型、Repository 边界和路由文件直接决定 M2 是否容易扩展。
+当前已通过 Repository 的 `getAll()` 接入倒序历史查询，并在路由中新增 `/history`；编辑器通过标准日期选择器选择日期，通过 `selectDate()` 先保存草稿再读取。后续月历记录标记可以复用 `DreamEntry`，记录较多时再加入按月范围查询。详见 [日期与历史说明](DATE_HISTORY_GUIDE.md)。
 
 ### 6.3 本地通知
 

@@ -20,6 +20,20 @@ class InMemoryDreamRepository implements DreamRepository {
   }
 
   @override
+  Future<List<DreamEntry>> getAll() async {
+    // 复制成独立列表再排序，避免历史页面的读取改变存储本身。
+    // 与正式仓库保持相同的空白判断和日期顺序，Widget 测试才有参考价值。
+    final entries =
+        _entries.values
+            .where((entry) => entry.content.trim().isNotEmpty)
+            .toList()
+          ..sort(
+            (first, second) => second.dreamDate.compareTo(first.dreamDate),
+          );
+    return List<DreamEntry>.unmodifiable(entries);
+  }
+
+  @override
   Future<DreamEntry> save({
     required DateTime date,
     required String content,

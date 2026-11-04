@@ -105,7 +105,7 @@ SQLite 表名为 `dream_records`：
 
 正确验收标准是：**等待“已保存”后完整退出并重开，刚才的正文仍存在。** 若看到“等待自动保存”“正在保存”或“保存失败”，不要把它当成已经成功落盘。
 
-当前只有“当天编辑器”。如果跨天再打开，显示空白可能只是正在读取新一天；旧日期记录不会因此自动删除，但需要后续历史记录/日历功能才能方便浏览。编辑器保持打开跨午夜时不会自动切换文档日期，这也不在本次实现范围内。
+M1 基线只有“当天编辑器”；后续日期与历史功能已接入，可按日期查看、补记和回顾旧记录，见 [日期与历史说明](DATE_HISTORY_GUIDE.md)。跨天再打开会默认读取新一天，旧日期记录不会自动删除；编辑器保持打开跨午夜时不会自动切换文档日期。
 
 ## 5. 你需要对这些文件做什么
 
@@ -135,7 +135,7 @@ flutter test
 
 本次仓库副本已从 `cyrusz2768-panda/Morpheus-App` 克隆，工程就是包含 `pubspec.yaml` 的本地 `Morpheus-App` 文件夹。文档沿用远端已有的 `docs/` 目录，不另建 `doc/`；此前未关联 Git 的工程副本仍可保留作为备份。
 
-当前准备分支是 `feature/m1-sqlite`，是否已经上传请以 Git 状态和 GitHub 页面为准。公开可读取仓库不等于本机已获得推送权限；需要通过 GitHub 登录授权后才能提交推送。不要发送密码或访问 Token 到聊天中。
+M1 基线已通过 PR #2 合并；后续日期与历史功能已通过开发者模拟器验收，并获准从 `feature/date-history` 发布，采用 PR 与 CI 检查流程。实际上传状态以 Git 状态和 GitHub 页面为准。不要发送密码或访问 Token 到聊天中。
 
 ### 5.3 启动 App：需要完整重新构建
 
@@ -187,8 +187,8 @@ Hot Reload 不会销毁整个进程；Hot Restart 也不等于操作系统层面
 | `dart run build_runner build` | 成功；重复生成也通过 |
 | `dart format --output=none --set-exit-if-changed lib test` | 通过，无格式差异 |
 | `flutter analyze` | 通过，No issues found |
-| `flutter test` | 28 项全部通过（原有 6 项 + 本次新增 22 项） |
-| Android / iOS 设备完整退出重启 | 尚未执行，需按第 6 节人工验收 |
+| `flutter test` | M1 基线 28 项通过；后续日期与历史功能加入后共 57 项通过，见对应功能说明 |
+| Android / iOS 设备完整退出重启 | Android M1 基础功能已由开发者于 2026-11-04 验收；iOS 仍待验证 |
 
 其中默认 `AppDatabase()` 的测试也已通过：只替换系统目录接口，真实执行后台连接、文件创建、关闭和重新读取。没有在这个测试中改用内存数据库，也没有访问真实用户沙盒。
 
@@ -209,6 +209,6 @@ Hot Reload 不会销毁整个进程；Hot Restart 也不等于操作系统层面
 
 以后增加标签、心情等字段，既要修改表和重新生成代码，也要增加 `schemaVersion`、编写并测试迁移。不应通过卸载 App 或删除 SQLite 文件解决正式用户的结构升级问题。
 
-后续建议先完成设备重启验收、真实错误场景验证与数据库迁移策略，再进入日历/历史记录；暂不把 AI 或健康数据接入混入本次存储任务。
+Android M1 基线验收通过后，当前进入日期与历史功能，详见 [后续说明](DATE_HISTORY_GUIDE.md)。iOS 验收、真实错误场景和数据库迁移策略仍需继续完善；AI 与健康数据接入属于后续任务。
 
 参考资料：[Drift 安装与代码生成](https://drift.simonbinder.eu/setup/)、[Drift 原生数据库平台](https://drift.simonbinder.eu/platforms/vm/)、[Drift 测试](https://drift.simonbinder.eu/testing/)。本文中的工程路径和业务规则以本项目源码为准。

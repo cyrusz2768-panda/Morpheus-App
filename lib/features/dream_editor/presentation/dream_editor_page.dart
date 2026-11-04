@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
+import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
+import 'package:morpheus/features/dream_history/application/dream_history_provider.dart';
 
 /// The first visible feature of the practice application.
 ///
@@ -21,6 +24,94 @@ class DreamEditorPage extends ConsumerStatefulWidget {
 class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
+
+  // 一次只处理一个日期/历史导航操作，防止快速连点弹出多个页面或并发切日。
+  // 这是页面交互状态；正文、保存结果与所选日期仍由 Controller 管理。
+  bool _isNavigating = false;
+
+  Future<void> _chooseDate() async {
+    if (_isNavigating) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      final date = ref.read(dreamEditorControllerProvider).date;
+      final today = DreamEntry.dateOnly(DateTime.now());
+      final firstDate = DateTime(1900);
+      // initialDate 必须位于选择器范围内。若系统时间被调整，仍给选择器
+      // 一个合法初始日期；原记录的日期不会因此被悄悄改写。
+      final initialDate = date.isAfter(today)
+          ? today
+          : date.isBefore(firstDate)
+          ? firstDate
+          : date;
+      final chosen = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: firstDate,
+        lastDate: today,
+        helpText: '选择梦境日期',
+        cancelText: '取消',
+        confirmText: '确定',
+      );
+      if (mounted && chosen != null) await _applyDate(chosen);
+    } finally {
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
+  Future<void> _openHistory() async {
+    if (_isNavigating) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      // 等待真正写入后再进入列表，避免用户刚输入的梦境还没出现在历史中。
+      do {
+        final saved = await ref
+            .read(dreamEditorControllerProvider.notifier)
+            .flushPendingSave();
+        if (!mounted) return;
+        if (!saved) {
+          _showNavigationFailure();
+          return;
+        }
+        // await 让出执行权期间，输入法可能刚好提交最后一段文字。导航前再
+        // 确认一次；这个最终检查与 push 之间没有 await，不留未提交窗口。
+      } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
+      ref.invalidate(dreamHistoryProvider);
+      final date = await context.push<DateTime>('/history');
+      if (mounted && date != null) await _applyDate(date);
+    } finally {
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
+  Future<void> _backToToday() async {
+    if (_isNavigating) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      await _applyDate(DreamEntry.dateOnly(DateTime.now()));
+    } finally {
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
+  Future<void> _applyDate(DateTime date) async {
+    final selected = await ref
+        .read(dreamEditorControllerProvider.notifier)
+        .selectDate(date);
+    if (mounted && !selected) _showNavigationFailure();
+  }
+
+  void _showNavigationFailure() {
+    final state = ref.read(dreamEditorControllerProvider);
+    // 读写失败已有页面内错误和“重试”。额外 Snackbar 会盖住底部重试按钮，
+    // 因此让用户直接操作现有错误入口；仅没有具体错误状态时显示一般提示。
+    if (state.failure != null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('操作尚未完成，请稍后重试。')));
+  }
 
   @override
   void initState() {
@@ -79,7 +170,28 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('夜行者'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('夜行者'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            key: const Key('select-date-button'),
+            tooltip: '选择日期',
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: _isNavigating || editorState.isLoading
+                ? null
+                : _chooseDate,
+          ),
+          IconButton(
+            key: const Key('open-history-button'),
+            tooltip: '历史梦境',
+            icon: const Icon(Icons.history),
+            onPressed: _isNavigating || editorState.isLoading
+                ? null
+                : _openHistory,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -88,6 +200,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
               : _EditorBody(
                   state: editorState,
                   textController: _textController,
+                  onBackToToday: _isNavigating ? null : _backToToday,
                   onChanged: ref
                       .read(dreamEditorControllerProvider.notifier)
                       .contentChanged,
@@ -113,12 +226,14 @@ class _EditorBody extends StatelessWidget {
   const _EditorBody({
     required this.state,
     required this.textController,
+    required this.onBackToToday,
     required this.onChanged,
     required this.onRetry,
   });
 
   final DreamEditorState state;
   final TextEditingController textController;
+  final VoidCallback? onBackToToday;
   final ValueChanged<String> onChanged;
   final VoidCallback onRetry;
 
@@ -127,13 +242,27 @@ class _EditorBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          _formatDate(state.date),
-          style: Theme.of(context).textTheme.headlineSmall,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _formatDate(state.date),
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            if (state.date != DreamEntry.dateOnly(DateTime.now()))
+              TextButton(
+                key: const Key('back-to-today-button'),
+                onPressed: onBackToToday,
+                child: const Text('回到今天'),
+              ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
-          '趁记忆还清晰，写下你刚刚梦见的内容。',
+          state.date == DreamEntry.dateOnly(DateTime.now())
+              ? '趁记忆还清晰，写下你刚刚梦见的内容。'
+              : '查看或补记这一天的梦境，修改后仍会自动保存。',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
