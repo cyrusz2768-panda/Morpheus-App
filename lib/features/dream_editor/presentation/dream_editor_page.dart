@@ -29,6 +29,29 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
   // 这是页面交互状态；正文、保存结果与所选日期仍由 Controller 管理。
   bool _isNavigating = false;
 
+  Future<void> _openReminders() async {
+    if (_isNavigating) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      // 与打开历史一样，离开编辑页前等待最新草稿。权限弹窗可能让 App
+      // 进入 inactive 状态，所以先确保正文已经保存，再处理提醒设置。
+      do {
+        final saved = await ref
+            .read(dreamEditorControllerProvider.notifier)
+            .flushPendingSave();
+        if (!mounted) return;
+        if (!saved) {
+          _showNavigationFailure();
+          return;
+        }
+      } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
+      await context.push<void>('/reminders');
+    } finally {
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
   Future<void> _chooseDate() async {
     if (_isNavigating) return;
     FocusScope.of(context).unfocus();
@@ -117,6 +140,11 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
   void initState() {
     super.initState();
 
+    // 通知导航可能在页面创建前就加载了当天记录。既处理已加载状态，
+    // 也继续在 ref.listen 中处理后续异步加载，避免重建后出现空输入框。
+    final current = ref.read(dreamEditorControllerProvider);
+    if (!current.isLoading) _textController.text = current.content;
+
     // Register for events such as the app moving to the background. Mobile
     // operating systems may terminate a background app later, so pending text
     // should be flushed before that can happen.
@@ -174,6 +202,14 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         title: const Text('夜行者'),
         centerTitle: false,
         actions: [
+          IconButton(
+            key: const Key('open-reminders-button'),
+            tooltip: '每日提醒',
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: _isNavigating || editorState.isLoading
+                ? null
+                : _openReminders,
+          ),
           IconButton(
             key: const Key('select-date-button'),
             tooltip: '选择日期',
