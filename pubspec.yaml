@@ -20,6 +20,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Flutter SDK 自带的本地化支持，让系统日期选择器显示中文年月、星期和按钮。
+  # 它提供标准组件的翻译；梦境正文仍是用户自己的文字，不需要翻译处理。
+  flutter_localizations:
+    sdk: flutter
+
   # Riverpod stores application state outside widgets. This separation makes
   # business logic testable without pressing buttons on a real device.
   flutter_riverpod: ^3.4.3

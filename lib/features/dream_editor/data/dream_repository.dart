@@ -1,13 +1,19 @@
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 
-/// The storage contract required by the dream editor.
+/// 编辑器与历史页面共用的存储契约。
 ///
-/// The UI depends on this interface rather than a concrete database. The
-/// current skeleton uses an in-memory implementation for clarity; the next M1
-/// step can add a Drift implementation without rewriting the page/controller.
+/// 正式应用由 Drift / SQLite 实现，测试可以注入内存实现。页面只需要知道
+/// “读某天、读历史、保存、删除”，不需要直接操作数据库或了解 SQL。
 abstract interface class DreamRepository {
   /// Reads the entry associated with [date], or returns null when none exists.
   Future<DreamEntry?> getByDate(DateTime date);
+
+  /// 返回有正文的全部梦境，按梦境日期从近到远排列，每个日期最多一条。
+  ///
+  /// 排序依据是 dreamDate，而不是 updatedAt：今天补记上个月的梦，仍应出现在
+  /// 上个月的位置。没有记录时返回空列表；读取失败仍向上传递异常，让页面显示
+  /// “读取失败”和重试入口，不能把失败伪装成“尚无历史梦境”。
+  Future<List<DreamEntry>> getAll();
 
   /// Creates or updates the entry for [date].
   ///

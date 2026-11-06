@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:morpheus/app/router.dart';
 import 'package:morpheus/app/theme.dart';
 
@@ -21,6 +22,11 @@ class MorpheusApp extends ConsumerWidget {
       title: '夜行者',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      // 当前练习项目以中文为默认语言。SDK 的 delegate 负责日期选择器等
+      // 标准组件的本地化，避免出现页面中文、月份和星期却为英文的混用。
+      locale: const Locale('zh', 'CN'),
+      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: router,
     );
   }

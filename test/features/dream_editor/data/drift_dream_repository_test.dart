@@ -34,6 +34,85 @@ void main() {
       expect(await database.select(database.dreamRecords).get(), isEmpty);
     });
 
+    test('空数据库读取历史返回空列表，不创建空记录', () async {
+      expect(await repository.getAll(), isEmpty);
+      expect(await database.select(database.dreamRecords).get(), isEmpty);
+    });
+
+    test('历史按梦境日期倒序，乱序插入及跨年不会打乱顺序', () async {
+      // 保存顺序与日期顺序故意不同，验证的是 SQL 排序，而不是主键或插入顺序。
+      await repository.save(date: DateTime(2026, 1, 2), content: '最早的梦');
+      await repository.save(date: DateTime(2027, 1, 1), content: '最新的梦');
+      await repository.save(date: DateTime(2026, 12, 31), content: '跨年前的梦');
+
+      final history = await repository.getAll();
+
+      expect(history.map((entry) => entry.id), [
+        '2027-01-01',
+        '2026-12-31',
+        '2026-01-02',
+      ]);
+      expect(history.map((entry) => entry.content), ['最新的梦', '跨年前的梦', '最早的梦']);
+    });
+
+    test('补充旧梦境不重复，也不会因更新时间较新而排到历史首位', () async {
+      final oldDate = DateTime(2026, 11, 2);
+      await repository.save(date: oldDate, content: '旧日期的第一版');
+      await repository.save(date: DateTime(2026, 11, 3), content: '最近一天的梦');
+      currentTime = currentTime.add(const Duration(hours: 1));
+      await repository.save(date: oldDate, content: '旧日期补充后的正文');
+
+      final history = await repository.getAll();
+
+      expect(history, hasLength(2));
+      expect(history.first.id, '2026-11-03');
+      expect(history.last.id, '2026-11-02');
+      expect(history.last.content, '旧日期补充后的正文');
+      expect(history.last.updatedAt.isAfter(history.first.updatedAt), isTrue);
+    });
+
+    test('删除记录后，历史只移除所选日期，其他日期保持不变', () async {
+      final removedDate = DateTime(2026, 11, 2);
+      await repository.save(date: removedDate, content: '即将删除');
+      await repository.save(date: DateTime(2026, 11, 3), content: '需要保留');
+      await repository.deleteByDate(removedDate);
+
+      final history = await repository.getAll();
+
+      expect(history, hasLength(1));
+      expect(history.single.id, '2026-11-03');
+      expect(history.single.content, '需要保留');
+    });
+
+    test('历史过滤旧的纯空白行，但完整保留有效正文的空白', () async {
+      // 正常 save 已拒绝纯空白；直接写入测试数据库来模拟旧版/导入异常数据，
+      // 确保过滤规则不只处理普通空格，也覆盖换行、制表符和全角空格。
+      final blankDates = ['2026-11-01', '2026-11-02', '2026-11-03'];
+      final blankContents = ['', '   ', '\n\t\u3000'];
+      for (var index = 0; index < blankContents.length; index += 1) {
+        await database
+            .into(database.dreamRecords)
+            .insert(
+              DreamRecordsCompanion.insert(
+                dreamDate: blankDates[index],
+                content: blankContents[index],
+                createdAtMillis: 0,
+                updatedAtMillis: 0,
+              ),
+            );
+      }
+      await repository.save(
+        date: DateTime(2026, 11, 4),
+        content: '  真正的梦境\n保留换行与首尾空白  ',
+      );
+
+      final history = await repository.getAll();
+
+      expect(history, hasLength(1));
+      expect(history.single.id, '2026-11-04');
+      expect(history.single.content, '  真正的梦境\n保留换行与首尾空白  ');
+    });
+
     test('保存中文、多行及正文两端空白，并保留 UTC 毫秒精度', () async {
       final date = DateTime(2026, 11, 3, 23, 59, 58);
       const content = '  我梦见一座漂浮在云上的图书馆。\n第二层有一片海。  ';
@@ -161,6 +240,30 @@ void main() {
   });
 
   group('真实 SQLite 文件的持久化', () {
+    test('多日期历史在关闭重开后仍保持日期顺序、更新和删除结果', () async {
+      await _withTemporaryDatabaseFile((file) async {
+        await _withFileDatabase(file, (database) async {
+          final repository = DriftDreamRepository(database);
+          await repository.save(date: DateTime(2026, 11, 1), content: '月初第一版');
+          await repository.save(date: DateTime(2026, 11, 4), content: '最新一天');
+          await repository.save(date: DateTime(2026, 11, 2), content: '稍后删除');
+          await repository.save(date: DateTime(2026, 11, 1), content: '月初补充版');
+          await repository.deleteByDate(DateTime(2026, 11, 2));
+        });
+
+        // 新连接只能从真实文件恢复，不能依赖旧 Repository 或页面缓存。
+        await _withFileDatabase(file, (database) async {
+          final history = await DriftDreamRepository(database).getAll();
+
+          expect(history.map((entry) => entry.id), [
+            '2026-11-04',
+            '2026-11-01',
+          ]);
+          expect(history.map((entry) => entry.content), ['最新一天', '月初补充版']);
+        });
+      });
+    });
+
     test('关闭数据库后，用全新连接和仓库打开同一文件，正文仍然存在', () async {
       await _withTemporaryDatabaseFile((file) async {
         final date = DateTime(2026, 11, 3);
