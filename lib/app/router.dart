@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_editor/presentation/dream_editor_page.dart';
 import 'package:morpheus/features/dream_history/presentation/dream_history_page.dart';
+import 'package:morpheus/features/reminders/presentation/reminder_settings_page.dart';
 
 /// Central navigation configuration.
 ///
@@ -20,6 +21,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/history',
         name: 'dream-history',
         builder: (context, state) => const DreamHistoryPage(),
+      ),
+      GoRoute(
+        path: '/reminders',
+        name: 'reminder-settings',
+        builder: (context, state) => const ReminderSettingsPage(),
       ),
     ],
   );
