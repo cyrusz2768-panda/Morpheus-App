@@ -49,7 +49,7 @@ App 名称待定，当前暂用“夜行者 / Morpheus”。
 | 本地数据库 | Drift / SQLite |
 | 通知 | flutter_local_notifications + timezone |
 | 健康数据 | health 插件，封装 HealthKit / Health Connect |
-| 日历 UI | table_calendar |
+| 日历 UI | Flutter 月历网格与内置日期选择器 |
 | 安全存储 | flutter_secure_storage |
 | 导出分享 | share_plus / pdf |
 | 后端 | 进阶阶段：FastAPI + PostgreSQL + Redis |
@@ -96,15 +96,19 @@ UI / 界面层
 - Flutter Android / iOS 工程骨架，Riverpod 状态管理与 go_router 路由。
 - 按日期查看、补记和编辑梦境，800ms 防抖自动保存、清空后删除。
 - 中文日期选择器、按梦境日期倒序的历史列表，以及一键回到今天。
+- 带记录圆点的梦境月历、月份切换、回到今天，以及日期点击查看/补记。
 - Drift / SQLite 文件持久化、同日唯一、保存失败保留草稿并重试。
 - 每日提醒设置、首次通知说明、权限查询与申请、测试通知、点击通知打开当天记录。
+- 左上角菜单打开侧边抽屉，在“通知设置”中调整提醒；首次使用提供一次性入口引导。
 - 自动化测试覆盖真实文件关闭重开、默认后台连接、切日草稿保护、历史页面、提醒配置与通知导航。
 
-**验证边界：** Android 和 iOS 的基础记录、保存重开、日期选择和历史查看均已由开发者在模拟器中验收通过，用户也已确认本轮每日提醒功能验收通过。真机锁屏、后台、重启等场景仍需验证。数据库目前未加密，日历中的记录标记、健康数据和 AI 尚未实现；不标记整个 Version 0.1 完成。
+**验证边界：** Android 和 iOS 的基础记录、保存重开、日期选择和历史查看均已由开发者在模拟器中验收通过，用户也已确认每日提醒功能验收通过。本轮月历与菜单更新通过 134 项测试、静态分析、格式检查、iOS 模拟器构建启动及 Android ARM64 调试构建，用户已授权提交 PR；本轮 Android 未进行人工验收。真机锁屏、后台、重启等场景仍需验证。数据库目前未加密，健康数据和 AI 尚未实现；不标记整个 Version 0.1 完成。
 
 学习说明与操作步骤见 [M1 数据库接入说明](docs/M1_SQLITE_GUIDE.md)，目录职责见 [Flutter 工程说明](docs/FLUTTER_PROJECT_SKELETON.md)。原有需求、计划、许可证及开发日志继续保留。
 
 日期选择、历史查询与本轮验收步骤见 [日期与历史功能说明](docs/DATE_HISTORY_GUIDE.md)。日期选择器通过 Flutter SDK 自带的 `flutter_localizations` 显示中文，无需额外日历插件。
+
+右上角日历按钮现在打开带记录圆点的月历。实现逻辑和验收步骤见 [梦境月历说明](docs/CALENDAR_GUIDE.md)；沿用原数据库和编辑器，没有新增依赖。
 
 每日提醒的语言、依赖、数据流和两端验收步骤见 [每日提醒说明](docs/REMINDERS_GUIDE.md)。提醒使用 `flutter_local_notifications`、`flutter_timezone` 和 `timezone`；设置保存于本地私有 JSON。Android 采用普通通知调度，节电时可能延迟。
 

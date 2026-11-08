@@ -6,7 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
+import 'package:morpheus/features/dream_editor/presentation/widgets/editor_menu_drawer.dart';
+import 'package:morpheus/features/dream_editor/presentation/widgets/menu_reminder_intro.dart';
 import 'package:morpheus/features/dream_history/application/dream_history_provider.dart';
+import 'package:morpheus/features/reminders/application/reminder_controller.dart';
 
 /// The first visible feature of the practice application.
 ///
@@ -24,10 +27,68 @@ class DreamEditorPage extends ConsumerStatefulWidget {
 class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _menuHintQueued = false;
+  bool _menuHintShown = false;
 
-  // 一次只处理一个日期/历史导航操作，防止快速连点弹出多个页面或并发切日。
+  // 一次只处理一个页面/日期导航操作，防止快速连点弹出多个页面或并发切日。
   // 这是页面交互状态；正文、保存结果与所选日期仍由 Controller 管理。
   bool _isNavigating = false;
+
+  void _openMenu() {
+    if (_isNavigating || ref.read(dreamEditorControllerProvider).isLoading) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  void _openRemindersFromMenu() {
+    // closeDrawer 只关闭抽屉，不会误把编辑器路由 pop 掉。设置导航继续沿用
+    // 原有的保存等待和失败保护，避免搬动入口时改变正文的保存行为。
+    _scaffoldKey.currentState?.closeDrawer();
+    unawaited(_openReminders());
+  }
+
+  bool _canShowMenuHint(ReminderState reminder) {
+    return !_menuHintShown &&
+        !_isNavigating &&
+        !ref.read(dreamEditorControllerProvider).isLoading &&
+        !reminder.isLoading &&
+        !reminder.isBusy &&
+        reminder.settings != null &&
+        !reminder.settings!.menuHintSeen &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        _scaffoldKey.currentState?.isDrawerOpen != true;
+  }
+
+  void _queueMenuHint(ReminderState reminder) {
+    if (_menuHintQueued || !_canShowMenuHint(reminder)) return;
+    _menuHintQueued = true;
+    // 不能在 build 中直接弹窗。等本帧完成后再次检查当前路由，防止加载
+    // 期间用户已经进入月历，提示却又盖到另一个页面上。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _menuHintQueued = false;
+      if (!mounted || !_canShowMenuHint(ref.read(reminderControllerProvider))) {
+        return;
+      }
+      _menuHintShown = true;
+      unawaited(_showMenuHint());
+    });
+  }
+
+  Future<void> _showMenuHint() async {
+    final openMenu = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const MenuReminderIntro(),
+    );
+    if (!mounted) return;
+    // 入口提示与“是否读过系统通知授权说明”是两个独立状态，不能互相覆盖。
+    // 本次会话已经显示过，即使磁盘写入失败，也不反复弹窗打断用户记录。
+    await ref.read(reminderControllerProvider.notifier).acknowledgeMenuHint();
+    if (mounted && openMenu == true) _openMenu();
+  }
 
   Future<void> _openReminders() async {
     if (_isNavigating) return;
@@ -57,24 +118,22 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
-      final date = ref.read(dreamEditorControllerProvider).date;
-      final today = DreamEntry.dateOnly(DateTime.now());
-      final firstDate = DateTime(1900);
-      // initialDate 必须位于选择器范围内。若系统时间被调整，仍给选择器
-      // 一个合法初始日期；原记录的日期不会因此被悄悄改写。
-      final initialDate = date.isAfter(today)
-          ? today
-          : date.isBefore(firstDate)
-          ? firstDate
-          : date;
-      final chosen = await showDatePicker(
-        context: context,
-        initialDate: initialDate,
-        firstDate: firstDate,
-        lastDate: today,
-        helpText: '选择梦境日期',
-        cancelText: '取消',
-        confirmText: '确定',
+      // 月历的圆点来自已写入数据库的记录。先保存最新草稿，再打开月历，
+      // 刚新增/清空的日期才会立即出现/移除标记；失败时留在编辑器重试。
+      do {
+        final saved = await ref
+            .read(dreamEditorControllerProvider.notifier)
+            .flushPendingSave();
+        if (!mounted) return;
+        if (!saved) {
+          _showNavigationFailure();
+          return;
+        }
+        // await 期间输入法可能交付末尾文字，导航前同步确认一次。
+      } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
+      final chosen = await context.push<DateTime>(
+        '/calendar',
+        extra: ref.read(dreamEditorControllerProvider).date,
       );
       if (mounted && chosen != null) await _applyDate(chosen);
     } finally {
@@ -178,6 +237,8 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
   @override
   Widget build(BuildContext context) {
     final editorState = ref.watch(dreamEditorControllerProvider);
+    final reminderState = ref.watch(reminderControllerProvider);
+    _queueMenuHint(reminderState);
 
     // Repository reads finish asynchronously. When loading completes, copy the
     // stored content into TextEditingController exactly once. Writing the
@@ -198,18 +259,26 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     });
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: EditorMenuDrawer(
+        canNavigate: !_isNavigating && !editorState.isLoading,
+        onOpenReminders: _openRemindersFromMenu,
+        onClose: () => _scaffoldKey.currentState?.closeDrawer(),
+      ),
+      onDrawerChanged: (isOpen) {
+        // 若配置恰好在抽屉打开期间读完，等抽屉关闭后再考虑首次提示。
+        if (!isOpen && mounted) setState(() {});
+      },
       appBar: AppBar(
+        leading: IconButton(
+          key: const Key('open-menu-button'),
+          tooltip: '打开菜单',
+          icon: const Icon(Icons.menu),
+          onPressed: _isNavigating || editorState.isLoading ? null : _openMenu,
+        ),
         title: const Text('夜行者'),
         centerTitle: false,
         actions: [
-          IconButton(
-            key: const Key('open-reminders-button'),
-            tooltip: '每日提醒',
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: _isNavigating || editorState.isLoading
-                ? null
-                : _openReminders,
-          ),
           IconButton(
             key: const Key('select-date-button'),
             tooltip: '选择日期',

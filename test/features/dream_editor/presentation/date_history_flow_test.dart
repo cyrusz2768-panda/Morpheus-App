@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:morpheus/app/app.dart';
+import 'package:morpheus/features/dream_calendar/application/recorded_dream_dates_provider.dart';
+import 'package:morpheus/features/dream_calendar/data/calendar_repository.dart';
 import 'package:morpheus/features/dream_editor/data/dream_providers.dart';
 import 'package:morpheus/features/dream_editor/data/in_memory_dream_repository.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
+import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+
+import '../../reminders/reminder_fakes.dart';
 
 void main() {
   testWidgets('历史按梦境日期倒序，点击旧记录后可查看并回到今天', (tester) async {
@@ -145,11 +150,16 @@ void main() {
 
     await tester.tap(find.byKey(const Key('select-date-button')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calendar-jump-date-button')));
+    await tester.pumpAndSettle();
     expect(find.byType(DatePickerDialog), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
 
     expect(find.byType(DatePickerDialog), findsNothing);
+    // 取消快速选择只关闭选择器，继续留在月历；返回后原日期和正文保持。
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
     expect(find.text(_displayDate(today)), findsOneWidget);
     expect(_editorText(tester), draft);
   });
@@ -163,6 +173,8 @@ void main() {
     await _showApp(tester, repository);
 
     await tester.tap(find.byKey(const Key('select-date-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calendar-jump-date-button')));
     await tester.pumpAndSettle();
     final calendar = tester.widget<CalendarDatePicker>(
       find.byType(CalendarDatePicker),
@@ -214,7 +226,16 @@ Future<void> _showApp(
 ) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [dreamRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        dreamRepositoryProvider.overrideWithValue(repository),
+        calendarRepositoryProvider.overrideWithValue(
+          _CalendarDatesRepository(repository),
+        ),
+        reminderSettingsStoreProvider.overrideWithValue(FakeReminderStore()),
+        reminderNotificationsProvider.overrideWithValue(
+          FakeReminderNotifications(),
+        ),
+      ],
       child: const MorpheusApp(),
     ),
   );
@@ -275,5 +296,24 @@ class _HistoryRepository extends InMemoryDreamRepository {
       throw StateError('测试用保存故障');
     }
     return super.save(date: date, content: content);
+  }
+}
+
+/// 日期回归测试共享同一个内存仓库，避免新月历误读开发者的真实数据库。
+class _CalendarDatesRepository implements ICalendarRepository {
+  _CalendarDatesRepository(this.repository);
+  final InMemoryDreamRepository repository;
+
+  @override
+  Stream<Set<String>> watchRecordedDatesInMonth(DateTime month) async* {
+    final entries = await repository.getAll();
+    yield entries
+        .where(
+          (entry) =>
+              entry.dreamDate.year == month.year &&
+              entry.dreamDate.month == month.month,
+        )
+        .map((entry) => DreamEntry.dateKey(entry.dreamDate))
+        .toSet();
   }
 }

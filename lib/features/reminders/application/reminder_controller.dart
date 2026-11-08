@@ -141,6 +141,17 @@ class ReminderController extends Notifier<ReminderState> {
         if (requestPermission) await _requestPermission();
       });
 
+  /// 菜单教学只记录“已发现入口”，不表示用户同意接收通知。
+  /// 仍走同一串行写入入口，避免与修改提醒时间同时保存时丢失设置；
+  /// 只有文件保存成功才更新界面，失败后下次仍会展示教学以便重试。
+  /// 此处不调用 _commit：纯界面教学不应查询/请求权限或重排已有提醒。
+  Future<bool> acknowledgeMenuHint() => _run(() async {
+    final next = state.settings!.copyWith(menuHintSeen: true);
+    await _store.write(next);
+    if (!ref.mounted) return;
+    state = state.copyWith(settings: next);
+  });
+
   Future<void> _requestPermission() async {
     final granted = await _notifications.requestPermission();
     if (!ref.mounted) return;

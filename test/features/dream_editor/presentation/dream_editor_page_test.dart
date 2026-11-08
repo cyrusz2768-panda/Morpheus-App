@@ -7,6 +7,9 @@ import 'package:morpheus/features/dream_editor/application/dream_editor_controll
 import 'package:morpheus/features/dream_editor/data/in_memory_dream_repository.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_editor/presentation/dream_editor_page.dart';
+import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+
+import '../../reminders/reminder_fakes.dart';
 
 void main() {
   testWidgets('typing saves the current dream after the debounce delay', (
@@ -18,7 +21,13 @@ void main() {
       ProviderScope(
         // Provider overrides are dependency injection for tests. The page uses
         // this exact repository, allowing the test to inspect saved data.
-        overrides: [dreamRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          dreamRepositoryProvider.overrideWithValue(repository),
+          reminderSettingsStoreProvider.overrideWithValue(FakeReminderStore()),
+          reminderNotificationsProvider.overrideWithValue(
+            FakeReminderNotifications(),
+          ),
+        ],
         child: const MaterialApp(home: DreamEditorPage()),
       ),
     );
@@ -148,7 +157,13 @@ Future<void> _showEditor(
 ) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [dreamRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        dreamRepositoryProvider.overrideWithValue(repository),
+        reminderSettingsStoreProvider.overrideWithValue(FakeReminderStore()),
+        reminderNotificationsProvider.overrideWithValue(
+          FakeReminderNotifications(),
+        ),
+      ],
       child: const MaterialApp(home: DreamEditorPage()),
     ),
   );

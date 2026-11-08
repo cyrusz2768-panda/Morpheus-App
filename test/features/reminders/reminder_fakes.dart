@@ -7,7 +7,7 @@ import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
 /// 这些替身只在测试中使用，记录系统调用和故障，不触碰真实通知权限。
 class FakeReminderStore implements IReminderSettingsStore {
   FakeReminderStore([ReminderSettings? initial])
-    : settings = initial ?? ReminderSettings();
+    : settings = initial ?? ReminderSettings(menuHintSeen: true);
   ReminderSettings settings;
   int writeFailures = 0;
   int readFailures = 0;
@@ -38,6 +38,7 @@ class FakeReminderNotifications implements IReminderNotifications {
   bool requestResult = false;
   bool launchedFromNotification = false;
   int requests = 0;
+  int permissionChecks = 0;
   int testNotifications = 0;
   int openedSettings = 0;
   int scheduleFailures = 0;
@@ -52,7 +53,10 @@ class FakeReminderNotifications implements IReminderNotifications {
   }
 
   @override
-  Future<bool> isPermissionGranted() async => granted;
+  Future<bool> isPermissionGranted() async {
+    permissionChecks++;
+    return granted;
+  }
 
   @override
   Future<bool> requestPermission() async {

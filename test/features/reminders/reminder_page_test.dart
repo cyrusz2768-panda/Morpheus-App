@@ -41,7 +41,9 @@ void main() {
   }
 
   Future<void> openReminders(WidgetTester tester) async {
-    await tester.tap(find.byKey(const Key('open-reminders-button')));
+    await tester.tap(find.byKey(const Key('open-menu-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('open-reminders-menu-item')));
     await tester.pumpAndSettle();
   }
 
@@ -124,7 +126,7 @@ void main() {
   });
 
   testWidgets('时间选择器取消不改设置，确认后自动保存', (tester) async {
-    store.settings = ReminderSettings(noticeSeen: true);
+    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
     await showApp(tester);
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
@@ -148,7 +150,7 @@ void main() {
   });
 
   testWidgets('点击测试按钮发送通知但不开启每日提醒', (tester) async {
-    store.settings = ReminderSettings(noticeSeen: true);
+    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
     notifications.granted = true;
     await showApp(tester);
     await openReminders(tester);
@@ -181,7 +183,7 @@ void main() {
   });
 
   testWidgets('通知从设置页回到当天，关闭时间选择弹窗', (tester) async {
-    store.settings = ReminderSettings(noticeSeen: true);
+    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
     await showApp(tester);
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));

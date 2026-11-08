@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
 
 import 'reminder_fakes.dart';
 
@@ -51,6 +52,99 @@ void main() {
     expect(notifications.requests, 1);
     expect(store.settings.noticeSeen, isTrue);
     expect(store.settings.enabled, isFalse);
+  });
+
+  for (final enabled in [false, true]) {
+    test('确认菜单教学只保存入口状态，保留${enabled ? '开启' : '关闭'}的提醒与说明', () async {
+      store.settings = ReminderSettings(
+        enabled: enabled,
+        hour: 6,
+        minute: 35,
+        noticeSeen: enabled,
+        menuHintSeen: false,
+      );
+      notifications.granted = enabled;
+      await controller.load();
+      final previous = current();
+      final schedule = notifications.scheduled;
+      final calls = List<String>.of(notifications.calls);
+      final permissionChecks = notifications.permissionChecks;
+
+      expect(await controller.acknowledgeMenuHint(), isTrue);
+
+      expect(store.settings.toJson(), {
+        ...previous.settings!.toJson(),
+        'menuHintSeen': true,
+      });
+      expect(current().settings, same(store.settings));
+      expect(current().permissionGranted, previous.permissionGranted);
+      expect(current().tapSequence, previous.tapSequence);
+      expect(current().isBusy, isFalse);
+      expect(notifications.permissionChecks, permissionChecks);
+      expect(notifications.requests, 0);
+      expect(notifications.calls, calls);
+      expect(notifications.scheduled, same(schedule));
+      expect(notifications.testNotifications, 0);
+      expect(notifications.openedSettings, 0);
+    });
+  }
+
+  test('菜单教学保存失败仍保留未读状态与原提醒，可再次确认', () async {
+    final original = ReminderSettings(
+      enabled: true,
+      hour: 21,
+      minute: 45,
+      noticeSeen: true,
+      menuHintSeen: false,
+    );
+    store.settings = original;
+    notifications.granted = true;
+    await controller.load();
+    final schedule = notifications.scheduled;
+    final calls = List<String>.of(notifications.calls);
+    final permissionChecks = notifications.permissionChecks;
+    store.writeFailures = 1;
+
+    expect(await controller.acknowledgeMenuHint(), isFalse);
+
+    expect(store.settings, same(original));
+    expect(current().settings, same(original));
+    expect(current().settings!.menuHintSeen, isFalse);
+    expect(current().error, isNotNull);
+    expect(current().isBusy, isFalse);
+    expect(notifications.permissionChecks, permissionChecks);
+    expect(notifications.requests, 0);
+    expect(notifications.calls, calls);
+    expect(notifications.scheduled, same(schedule));
+
+    expect(await controller.acknowledgeMenuHint(), isTrue);
+    expect(current().error, isNull);
+    expect(store.settings.toJson(), {
+      ...original.toJson(),
+      'menuHintSeen': true,
+    });
+    expect(notifications.calls, calls);
+  });
+
+  test('菜单教学写入也串行执行，未完成前不允许其他设置覆盖', () async {
+    store.settings = ReminderSettings(menuHintSeen: false);
+    await controller.load();
+    store.writeGate = Completer<void>();
+    final first = controller.acknowledgeMenuHint();
+    expect(current().isBusy, isTrue);
+    expect(current().settings!.menuHintSeen, isFalse);
+    expect(await controller.setTime(9, 0), isFalse);
+    expect(
+      await controller.acknowledgeNotice(requestPermission: true),
+      isFalse,
+    );
+
+    store.writeGate!.complete();
+    expect(await first, isTrue);
+    expect(store.settings.menuHintSeen, isTrue);
+    expect(store.settings.timeLabel, '08:00');
+    expect(store.settings.noticeSeen, isFalse);
+    expect(notifications.requests, 0);
   });
 
   test('拒绝通知不能把每日提醒显示为开启', () async {

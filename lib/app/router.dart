@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:morpheus/features/dream_calendar/presentation/dream_calendar_page.dart';
 import 'package:morpheus/features/dream_editor/presentation/dream_editor_page.dart';
 import 'package:morpheus/features/dream_history/presentation/dream_history_page.dart';
 import 'package:morpheus/features/reminders/presentation/reminder_settings_page.dart';
@@ -21,6 +22,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/history',
         name: 'dream-history',
         builder: (context, state) => const DreamHistoryPage(),
+      ),
+      GoRoute(
+        path: '/calendar',
+        name: 'dream-calendar',
+        builder: (context, state) {
+          final initialDate = state.extra;
+          return DreamCalendarPage(
+            initialDate: initialDate is DateTime ? initialDate : DateTime.now(),
+          );
+        },
       ),
       GoRoute(
         path: '/reminders',

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 void main() {
   setUpAll(tz_data.initializeTimeZones);
 
-  test('真实文件写入后，新 Store 实例仍能恢复提醒和已读说明', () async {
+  test('真实文件写入后，新 Store 实例仍能恢复提醒、已读说明与菜单教学', () async {
     final directory = await Directory.systemTemp.createTemp(
       'morpheus-reminder-test-',
     );
@@ -18,18 +19,110 @@ void main() {
     final file = File('${directory.path}/settings/reminders.json');
     final first = FileReminderSettingsStore(resolveFile: () async => file);
     expect((await first.read()).noticeSeen, isFalse);
+    expect((await first.read()).menuHintSeen, isFalse);
     await first.write(
-      ReminderSettings(enabled: true, hour: 7, minute: 15, noticeSeen: true),
+      ReminderSettings(
+        enabled: true,
+        hour: 7,
+        minute: 15,
+        noticeSeen: true,
+        menuHintSeen: true,
+      ),
     );
     final reopened = FileReminderSettingsStore(resolveFile: () async => file);
     final restored = await reopened.read();
     expect(restored.timeLabel, '07:15');
     expect(restored.enabled, isTrue);
     expect(restored.noticeSeen, isTrue);
+    expect(restored.menuHintSeen, isTrue);
     await reopened.write(restored.copyWith(enabled: false, hour: 9));
     expect((await first.read()).enabled, isFalse);
     expect((await first.read()).timeLabel, '09:15');
+    expect((await first.read()).menuHintSeen, isTrue);
   });
+
+  test('旧配置缺少菜单教学字段时保留已有设置，确认后持久化新字段', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'morpheus-reminder-migration-test-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/reminders.json');
+    final legacy = {
+      'enabled': true,
+      'hour': 22,
+      'minute': 40,
+      'noticeSeen': true,
+    };
+    final original = jsonEncode({'notifications': legacy});
+    await file.writeAsString(original);
+    final store = FileReminderSettingsStore(resolveFile: () async => file);
+
+    final migrated = await store.read();
+
+    expect(migrated.toJson(), {...legacy, 'menuHintSeen': false});
+    // 读取旧版只补内存默认值，不因一次升级擅自重写已有配置文件。
+    expect(await file.readAsString(), original);
+    await store.write(migrated.copyWith(menuHintSeen: true));
+    final reopened = FileReminderSettingsStore(resolveFile: () async => file);
+    expect((await reopened.read()).toJson(), {...legacy, 'menuHintSeen': true});
+  });
+
+  test('菜单教学写入临时文件失败时，原文件与未读状态仍可恢复', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'morpheus-reminder-write-failure-test-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/reminders.json');
+    final store = FileReminderSettingsStore(resolveFile: () async => file);
+    final original = ReminderSettings(
+      enabled: true,
+      hour: 20,
+      minute: 25,
+      noticeSeen: true,
+      menuHintSeen: false,
+    );
+    await store.write(original);
+    final originalContents = await file.readAsString();
+    // 只阻挡原子保存使用的临时路径，验证失败不会截断真实配置。
+    final blockedTemporary = await Directory('${file.path}.tmp').create();
+
+    await expectLater(
+      store.write(original.copyWith(menuHintSeen: true)),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(await file.readAsString(), originalContents);
+    final reopened = FileReminderSettingsStore(resolveFile: () async => file);
+    expect((await reopened.read()).toJson(), original.toJson());
+    await blockedTemporary.delete();
+    await reopened.write(original.copyWith(menuHintSeen: true));
+    expect((await store.read()).menuHintSeen, isTrue);
+  });
+
+  for (final invalid in [null, 0, 'true']) {
+    test('菜单教学字段存在但类型为 $invalid 时报告错误并保留原文件', () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'morpheus-reminder-invalid-menu-test-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final file = File('${directory.path}/reminders.json');
+      final original = jsonEncode({
+        'notifications': {
+          'enabled': true,
+          'hour': 7,
+          'minute': 15,
+          'noticeSeen': true,
+          'menuHintSeen': invalid,
+        },
+      });
+      await file.writeAsString(original);
+      final store = FileReminderSettingsStore(resolveFile: () async => file);
+
+      await expectLater(store.read(), throwsFormatException);
+
+      expect(await file.readAsString(), original);
+    });
+  }
 
   test('损坏的配置报告错误，不静默覆盖原始文件', () async {
     final directory = await Directory.systemTemp.createTemp(
