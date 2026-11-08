@@ -1,6 +1,6 @@
 # 每日提醒：实现说明与验收步骤
 
-更新日期：2026-11-06。适用平台：Android 与 iOS。
+更新日期：2026-11-08。适用平台：Android 与 iOS。当前进度、验证结果和交接入口以 [项目状态](PROJECT_STATUS.md) 为准。
 
 ## 功能与操作
 
@@ -84,7 +84,7 @@ iOS 初始化阶段关闭自动授权请求。首次说明后，用户选择允�
 
 ## 本轮手工验收
 
-以下步骤在 Android 和 iOS 各执行一次，使用测试内容即可。
+以下步骤用于 Android 和 iOS 的人工回归，使用专门的测试内容。本页列出的是验收方法，不表示每次更新都已经逐项执行；最新执行范围见 [项目状态](PROJECT_STATUS.md)。
 
 1. 首次使用时确认入口提示包含菜单图标；点击“打开菜单”，再点击带铃铛图标的“通知设置”。原梦境内容继续保留。
 2. 首次进入通知设置时应出现礼貌说明；选择“稍后再说”，确认不出现系统授权框，仍可返回记录梦境。
@@ -109,6 +109,8 @@ flutter build apk --debug --target-platform android-arm64 --no-pub
 flutter build ios --simulator --debug --no-pub
 ```
 
-本轮功能已通过用户验收，经 `feature/daily-reminders` 分支提交 GitHub PR，等待 partner 审查并手动合并。配置文件、数据库、原生库下载缓存和构建输出均不上传。
+每日提醒基础功能已经用户验收，并通过 PR #4 合并。后续菜单入口与首次引导更新的最近验证包括 134 项测试、格式检查、静态分析、iOS 模拟器构建启动和 Android ARM64 调试构建；最新一轮 Android 未进行人工验收，真机验证尚未完成。
+
+自 2026-11-08 起，用户将后续交付改为必要验证通过后本地整合到 `main` 并直接 `git push`，不再要求新建 PR 或等待 partner 审核。实际交付状态见 [项目状态](PROJECT_STATUS.md)。配置文件、数据库、个人截图、原生库下载缓存和构建输出均不上传。
 
 参考：[通知插件的版本说明与配置](https://pub.dev/packages/flutter_local_notifications/versions/22.3.3)、[设备时区插件](https://pub.dev/packages/flutter_timezone)、[时区计算](https://pub.dev/packages/timezone)。

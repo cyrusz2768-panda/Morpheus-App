@@ -1,5 +1,7 @@
 # Flutter 工程骨架说明
 
+更新日期：2026-11-08。本文解释现有工程的职责划分；开始新任务时先阅读 [项目规则](../AGENTS.md) 和 [项目状态](PROJECT_STATUS.md)，再核对实际代码与 Git 状态。
+
 ## 1. 在 GitHub 仓库中的放置方式
 
 本项目的 GitHub 仓库应当直接作为 Flutter 项目根目录，不需要在仓库内部再创建一个名为 `morpheus` 或 `app` 的外层文件夹。
@@ -38,7 +40,7 @@ GitHub 网页中的“文件夹”不需要提前手工建立。Git 会根据本
 
 ## 2. 当前骨架的目标
 
-当前工程已经在原骨架上接入 Drift / SQLite 持久化，功能链为：
+当前工程已经在原骨架上接入 Drift / SQLite 持久化、日期与历史、月历和本地提醒。编辑记录的主链为：
 
 ```text
 main.dart
@@ -65,6 +67,7 @@ main.dart
 lib/
 ├── main.dart
 ├── app/
+├── core/
 └── features/
 ```
 
@@ -80,19 +83,20 @@ lib/
 
 #### `lib/app/app.dart`
 
-定义整个应用的根 Widget，集中装配主题、路由和应用级配置。它相当于把各功能模块组合成一个可运行程序的“装配点”。
+定义整个应用的根 Widget，集中装配主题、中文标准组件、路由和应用级配置。它相当于把各功能模块组合成一个可运行程序的“装配点”。当前还协调从系统设置返回后的提醒刷新，以及通知点击时先保存草稿、再打开当天记录。
 
 #### `lib/app/router.dart`
 
-集中声明页面地址和页面之间的导航关系。当前有梦境编辑页 `/` 与历史页 `/history`。后续里程碑可以添加：
+集中声明页面地址和页面之间的导航关系。当前已经注册：
 
 ```text
-/calendar   日历回顾
-/settings   提醒与隐私设置
+/           梦境编辑
 /history    历史记录
+/calendar   梦境月历与记录标记
+/reminders  每日提醒设置
 ```
 
-使用统一路由可以避免每个按钮自行创建页面并维护导航细节。
+使用统一路由可以避免每个按钮自行创建页面并维护导航细节。首页左上角菜单抽屉中的“通知设置”打开 `/reminders`；日历和历史按钮分别打开对应页面。
 
 #### `lib/app/theme.dart`
 
@@ -100,7 +104,7 @@ lib/
 
 ### 3.2 `lib/features/`
 
-按用户能够理解的功能组织代码。当前有 `dream_editor` 与 `dream_history`，未来可以逐步增加 `calendar`、`notifications`、`health` 和 `settings`。
+按用户能够理解的功能组织代码。当前有 `dream_editor`、`dream_history`、`dream_calendar` 和 `reminders`，分别负责记录编辑、历史查询、月历和提醒。健康数据与 AI 尚未接入。
 
 每个功能内部再按职责划分：
 
@@ -123,7 +127,7 @@ dream_editor/
 负责数据来自哪里、存到哪里。
 
 - `DreamRepository` 是上层代码使用的接口。
-- `InMemoryDreamRepository` 是当前练习实现。
+- `InMemoryDreamRepository` 是供测试和学习对比使用的内存实现。
 - `DriftDreamRepository` 是当前正式使用的本地持久化实现。
 - `dream_providers.dart` 负责装配数据库连接和 Repository，测试可以替换依赖。
 
@@ -164,8 +168,10 @@ test/features/dream_editor/
 - 页面输入后的自动保存行为。
 - 真实 SQLite 文件关闭、重新打开后，记录及更新时间仍然存在。
 - 正式 Provider 绑定与 Controller 在容器重建后的自动恢复。
+- 日期切换、历史和月历导航前的草稿保护，以及月历记录标记的实时更新。
+- 提醒设置持久化、权限和通知点击流程、菜单与首次引导。
 
-测试不是最后发布前才补写的附加物。这些契约测试帮助判断数据库改造是否破坏了既有功能；实际移动设备的完整退出/重启仍需要另做验收。
+这些契约测试帮助判断改造是否破坏既有功能；平台构建和设备人工回归另行记录，不能用测试数量代替。最近一次检查结果与尚未验证的场景见 [项目状态](PROJECT_STATUS.md)。
 
 ### 3.4 `docs/`
 
@@ -181,16 +187,17 @@ test/features/dream_editor/
 
 ### 3.5 `.github/workflows/`
 
-存放 GitHub Actions 配置。每次推送或提交 Pull Request 后，GitHub 会在干净环境中运行：
+存放 GitHub Actions 配置。现有工作流监听 `main` 和 `feature/**` 的推送，也保留 PR 触发支持。直接推送 `main` 后，GitHub 会在干净环境中运行：
 
 ```text
 flutter pub get
+dart run build_runner build
 dart format 检查
 flutter analyze
 flutter test
 ```
 
-这能发现“只在本机正常”的问题，例如遗漏文件、依赖未声明或格式不一致。
+这能发现遗漏文件、依赖未声明或格式不一致等问题。CI 当前不构建 Android APK 或 iOS App，也不替代设备验收；无需创建 PR 才能触发检查。
 
 ### 3.6 `pubspec.yaml`
 
@@ -261,29 +268,30 @@ Controller 和页面不需要理解 SQL。本次已经在 `dreamRepositoryProvid
 
 ### 6.2 日历与历史记录
 
-当前已通过 Repository 的 `getAll()` 接入倒序历史查询，并在路由中新增 `/history`；编辑器通过标准日期选择器选择日期，通过 `selectDate()` 先保存草稿再读取。后续月历记录标记可以复用 `DreamEntry`，记录较多时再加入按月范围查询。详见 [日期与历史说明](DATE_HISTORY_GUIDE.md)。
+当前已通过 Repository 的 `getAll()` 接入倒序历史查询，并注册 `/history`。首页日历按钮打开 `/calendar`，月历内保留标准中文快速日期选择器；选择日期后由编辑器安全保存草稿，再读取对应记录。
+
+月历通过 `ICalendarRepository` 按月监听同一份 SQLite 数据，直接从非空记录派生圆点，不创建标记副本或新表。详见 [日期与历史说明](DATE_HISTORY_GUIDE.md) 和 [梦境月历说明](CALENDAR_GUIDE.md)。历史搜索和分页尚未实现。
 
 ### 6.3 本地通知
 
-通知设置应作为独立功能模块，不直接写进编辑页面。通知被点击后，通过路由打开当天的 `DreamEditorPage`。因此通知功能依赖当前已有的稳定路由和编辑入口。
+本地通知已经接入独立的 `reminders` 模块，包含提醒时间、开关、授权说明、系统设置入口和测试通知。设置通过私有 JSON 保存，原生通知调用通过接口隔离 Android 与 iOS 差异。
+
+首页菜单提供通知设置入口，首次入口引导和系统通知授权说明分别记住已读状态。通知被点击后，App 层先等待最新草稿保存，再打开当天记录；权限被拒绝时仍能记录梦境。详见 [每日提醒说明](REMINDERS_GUIDE.md)。
 
 ### 6.4 HealthKit 与 Health Connect
 
-健康数据模块负责产生“可能已经醒来”的事件，而不负责编辑和保存梦境。事件触发本地通知，用户点击后仍然进入当前编辑链路。这样的分层可以保证健康权限失败时，梦境日记本身仍能正常使用。
+这是后续规划，当前没有健康数据模块。未来该模块可以产生“可能已经醒来”的事件，而不负责编辑和保存梦境。事件触发提醒后仍复用当前编辑链路，健康权限失败时保留手动记录与固定时间提醒。
 
 ### 6.5 AI 功能
 
-AI 功能应读取用户明确选择并授权的 `DreamEntry`，通过独立服务接口发送请求。它不应直接访问编辑器的 TextEditingController，也不应把 API Key 写入移动端源码。
+AI 尚未实现。未来应只读取用户明确选择并授权的 `DreamEntry`，通过独立服务接口发送请求，不直接访问编辑器的 TextEditingController，也不把 API Key 写入移动端源码。
 
-## 7. 推荐的后续实施顺序
+## 7. 新对话接手与后续开发
 
-1. 安装 Flutter 并运行 `tool/bootstrap_platforms.sh`。
-2. 修复本机环境问题，确保 `flutter doctor` 无关键错误。
-3. 执行 `flutter analyze` 和 `flutter test`。
-4. 启动模拟器，理解从 `main.dart` 到编辑页面的调用链。
-5. 验证已接入的 Drift 持久化：同一天、同一设备完整退出再打开仍能读取正文。
-6. 增加历史记录与日历页面。
-7. 增加用户设定时间的本地通知。
-8. 最后验证 HealthKit 与 Health Connect。
+1. 阅读 `AGENTS.md`、[项目状态](PROJECT_STATUS.md) 与最近开发日志，核对当前工作区、分支及远程更新；一个开发对话聚焦一个可验收目标。
+2. 首次克隆或依赖变化时恢复依赖并生成 Drift 代码；平台目录已经存在，不为开始新对话重新生成整个工程。
+3. 沿用既有分层实现当前目标，保持 Android 与 iOS 共用逻辑及用户数据兼容；日历、历史与提醒已实现，不重复另建模块。
+4. 根据改动完成格式、分析、测试及必要的平台构建或人工回归，明确哪些检查实际执行、哪些仍待验证。
+5. 更新项目状态、开发日志与相应功能说明，提交有说明的版本。按 2026-11-08 用户决定，本地整合到 `main` 后直接 `git push`，不再要求新建 PR 或等待 partner 审核。
 
-每一步都应保持现有测试通过，并在开发日志中记录已完成内容、遇到的问题和下一步计划。
+下一项功能以 [项目状态](PROJECT_STATUS.md) 和用户当前目标为准；健康数据、AI 等后续规划不自动进入本轮开发范围。
