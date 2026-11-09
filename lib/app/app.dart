@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:morpheus/app/router.dart';
 import 'package:morpheus/app/theme.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 /// The root widget of the application.
 ///
@@ -85,7 +85,11 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
         router.go('/');
       } else if (ref.read(dreamEditorControllerProvider).failure == null) {
         _messengerKey.currentState?.showSnackBar(
-          const SnackBar(content: Text('暂时无法打开当天记录，请先重试保存当前草稿。')),
+          SnackBar(
+            content: Text(
+              ref.read(appLocalizationsProvider).notificationNavigationFailed,
+            ),
+          ),
         );
       }
     } finally {
@@ -117,14 +121,13 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
 
     return MaterialApp.router(
       scaffoldMessengerKey: _messengerKey,
-      title: '夜行者',
+      onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      // 当前练习项目以中文为默认语言。SDK 的 delegate 负责日期选择器等
-      // 标准组件的本地化，避免出现页面中文、月份和星期却为英文的混用。
-      locale: const Locale('zh', 'CN'),
-      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      // 应用文案与标准组件共用同一套语言配置；当前只交付中文资源。
+      locale: morpheusLocale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
     );
   }

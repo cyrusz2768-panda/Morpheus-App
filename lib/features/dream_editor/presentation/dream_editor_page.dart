@@ -10,6 +10,7 @@ import 'package:morpheus/features/dream_editor/presentation/widgets/editor_menu_
 import 'package:morpheus/features/dream_editor/presentation/widgets/menu_reminder_intro.dart';
 import 'package:morpheus/features/dream_history/application/dream_history_provider.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 /// The first visible feature of the practice application.
 ///
@@ -216,7 +217,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     if (state.failure != null) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('操作尚未完成，请稍后重试。')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.navigationIncomplete)));
   }
 
   @override
@@ -296,16 +297,16 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
       appBar: AppBar(
         leading: IconButton(
           key: const Key('open-menu-button'),
-          tooltip: '打开菜单',
+          tooltip: context.l10n.openMenu,
           icon: const Icon(Icons.menu),
           onPressed: _isNavigating || editorState.isLoading ? null : _openMenu,
         ),
-        title: const Text('夜行者'),
+        title: Text(context.l10n.appTitle),
         centerTitle: false,
         actions: [
           IconButton(
             key: const Key('open-search-button'),
-            tooltip: '搜索梦境',
+            tooltip: context.l10n.searchDreams,
             icon: const Icon(Icons.search),
             onPressed: _isNavigating || editorState.isLoading
                 ? null
@@ -313,7 +314,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
           ),
           IconButton(
             key: const Key('select-date-button'),
-            tooltip: '选择日期',
+            tooltip: context.l10n.selectDate,
             icon: const Icon(Icons.calendar_month_outlined),
             onPressed: _isNavigating || editorState.isLoading
                 ? null
@@ -321,7 +322,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
           ),
           IconButton(
             key: const Key('open-history-button'),
-            tooltip: '历史梦境',
+            tooltip: context.l10n.dreamHistory,
             icon: const Icon(Icons.history),
             onPressed: _isNavigating || editorState.isLoading
                 ? null
@@ -383,7 +384,11 @@ class _EditorBody extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                _formatDate(state.date),
+                context.l10n.dreamDate(
+                  state.date.year,
+                  state.date.month,
+                  state.date.day,
+                ),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
@@ -391,15 +396,15 @@ class _EditorBody extends StatelessWidget {
               TextButton(
                 key: const Key('back-to-today-button'),
                 onPressed: onBackToToday,
-                child: const Text('回到今天'),
+                child: Text(context.l10n.backToToday),
               ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           state.date == DreamEntry.dateOnly(DateTime.now())
-              ? '趁记忆还清晰，写下你刚刚梦见的内容。'
-              : '查看或补记这一天的梦境，修改后仍会自动保存。',
+              ? context.l10n.editorTodayPrompt
+              : context.l10n.editorPastPrompt,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -418,9 +423,9 @@ class _EditorBody extends StatelessWidget {
             maxLines: null,
             textAlignVertical: TextAlignVertical.top,
             keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(
-              labelText: '梦境记录',
-              hintText: '例如：我梦见自己走进了一座没有影子的城市……',
+            decoration: InputDecoration(
+              labelText: context.l10n.dreamContentLabel,
+              hintText: context.l10n.dreamContentHint,
             ),
           ),
         ),
@@ -428,10 +433,6 @@ class _EditorBody extends StatelessWidget {
         _SaveStatusLine(state: state, onRetry: onRetry),
       ],
     );
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${date.year}年${date.month}月${date.day}日';
   }
 }
 
@@ -447,27 +448,27 @@ class _SaveStatusLine extends StatelessWidget {
     final (icon, label, color) = switch (state.saveStatus) {
       DreamSaveStatus.idle => (
         Icons.edit_note,
-        '尚未修改',
+        context.l10n.saveIdle,
         Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       DreamSaveStatus.unsaved => (
         Icons.schedule,
-        '等待自动保存',
+        context.l10n.savePending,
         Theme.of(context).colorScheme.tertiary,
       ),
       DreamSaveStatus.saving => (
         Icons.sync,
-        '正在保存',
+        context.l10n.saveInProgress,
         Theme.of(context).colorScheme.primary,
       ),
       DreamSaveStatus.saved => (
         Icons.check_circle_outline,
-        '已保存',
+        context.l10n.saveComplete,
         Theme.of(context).colorScheme.primary,
       ),
       DreamSaveStatus.failed => (
         Icons.error_outline,
-        state.errorMessage ?? '操作失败',
+        state.errorMessage ?? context.l10n.operationFailed,
         Theme.of(context).colorScheme.error,
       ),
     };
@@ -486,7 +487,7 @@ class _SaveStatusLine extends StatelessWidget {
           ),
         ),
         if (state.saveStatus == DreamSaveStatus.failed)
-          TextButton(onPressed: onRetry, child: const Text('重试')),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
       ],
     );
   }

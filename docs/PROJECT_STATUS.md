@@ -19,7 +19,8 @@
 ## 2. 代码与交付基线
 
 - 仓库：[cyrusz2768-panda/Morpheus-App](https://github.com/cyrusz2768-panda/Morpheus-App)。现有本地专案“夜行者/Morpheus”使用此仓库根目录，无需重新创建工程或仓库。
-- 本轮搜索交付提交为 `a2bb0c1`，基于主线 `fa51ad5`，新增 13 项测试，完整 147 项通过。此前月历、菜单基线为 `a7c8c4e`，134 项是当时的历史测试数。
+- 本轮文案交付的命令行 push 遇到 GitHub HTTPS 网络超时，采用已授权连接器同步相同文件树；本地原提交保留在 `codex/local-l10n`，远程提交与 CI 需实时核验。
+- 本轮文案集中管理基于主线 `66b6b0d`（包含搜索交付 `a2bb0c1`），新增 3 项资源接线/注入测试，完整 150 项通过；文案资源仍仅有中文，完整翻译与语言切换未开发。此前搜索的 147 项、月历/菜单的 134 项为各自历史测试数。
 - 历史 PR：[#2 工程与 SQLite](https://github.com/cyrusz2768-panda/Morpheus-App/pull/2)、[#3 日期与历史](https://github.com/cyrusz2768-panda/Morpheus-App/pull/3)、[#4 每日提醒](https://github.com/cyrusz2768-panda/Morpheus-App/pull/4) 已合并；[#5 月历与菜单](https://github.com/cyrusz2768-panda/Morpheus-App/pull/5) 创建后检查通过。
 - 本次交接整理以已验证的 #5 功能基线及交接文档为内容，直接整合到 `main` 交付。以后先核对实时 Git / GitHub 状态，不依据本文假定 PR 仍开放或提交号永远不变。
 - 原始分步提交保存在本地 `backup/*-reviewed-*` 分支，不是另一套工程；保留以便追溯，不必重复开发或重复上传。
@@ -40,6 +41,7 @@
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
 | 每日提醒 | 时间/开关、可延后授权、系统设置入口、测试通知、点击回当天；`lib/features/reminders/` |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
+| 界面文案 | 85 条中文 ARB，页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
 存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白由编辑流程删除。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
@@ -50,6 +52,8 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-09，`66b6b0d` 上的文案集中管理 | `flutter pub get`、`flutter gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --no-pub --reporter expanded`（Flutter 实际带 `--no-version-check`，SDK 查新超时后使用） | 全部通过，150 项；覆盖英文系统下保持中文及 Controller/通知注入资源 |
+| 2026-11-09，同上文案集中管理 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端构建通过（Gradle 18.6 秒、Xcode 30.2 秒）；本轮未安装启动、人工操作或真机验收 |
 | 2026-11-09，`fa51ad5` 上的搜索改动 | `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` | 全部通过，147 项；新增 13 项覆盖真实 SQLite、异步结果、输入法确认、焦点与导航草稿保护 |
 | 2026-11-09，同上 | `flutter build apk --debug --target-platform android-arm64 --no-pub`、`flutter build ios --simulator --debug --no-pub` | 双端构建通过（Android 27.5 秒、Xcode 99.5 秒）；Android 未启动或人工验收 |
 | 2026-11-09，`a2bb0c1` | [GitHub Actions 运行 42565723874](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/42565723874) | `Flutter checks` 成功；不含原生构建或人工验收 |
@@ -89,6 +93,8 @@ M1 原计划的逐项审计：
 - 历史列表与搜索当前无分页；正文搜索是本地连续文字匹配，不含拼音、分词或全文索引。跨午夜不会自动切换正在编辑的文档日期。这些是能力边界，不代表记录已丢失。
 - 未实现健康数据或手表接入、AI、账号、云同步、标签/心情、富文本。不要因为旧规划提及就自行立项。
 - “每次未设提醒都弹提示”是早期设想；最新实现按用户要求改成一次性菜单入口引导，系统授权说明在首次进入提醒设置时单独展示。
+
+文案维护按每个功能同步更新 ARB、每次交付检查遗漏执行，不积攒固定开发进度；完整翻译按版本另行安排，见 [文案指南](LOCALIZATION_GUIDE.md)。
 
 用户已于 2026-11-09 授权并开展正文搜索开发，用户验收仅打开 iOS 模拟器；Android 做构建检查。后续继续按一个明确目标推进。可补 M1 验收归档或安排 M5 真机/隐私收尾；健康数据与 AI 仍需单独任务，不因旧规划自行开展。
 

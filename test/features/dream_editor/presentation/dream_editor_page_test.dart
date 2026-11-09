@@ -8,6 +8,7 @@ import 'package:morpheus/features/dream_editor/data/in_memory_dream_repository.d
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_editor/presentation/dream_editor_page.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 import '../../reminders/reminder_fakes.dart';
 
@@ -28,7 +29,12 @@ void main() {
             FakeReminderNotifications(),
           ),
         ],
-        child: const MaterialApp(home: DreamEditorPage()),
+        child: const MaterialApp(
+          locale: morpheusLocale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: DreamEditorPage(),
+        ),
       ),
     );
 
@@ -164,7 +170,12 @@ Future<void> _showEditor(
           FakeReminderNotifications(),
         ),
       ],
-      child: const MaterialApp(home: DreamEditorPage()),
+      child: const MaterialApp(
+        locale: morpheusLocale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DreamEditorPage(),
+      ),
     ),
   );
   await tester.pumpAndSettle();

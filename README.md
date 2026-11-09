@@ -130,6 +130,8 @@ Version 0.1 暂不包含：
 
 ---
 
+当前界面文案、日期句式、读屏提示与通知文字已集中到 `lib/l10n/app_zh.arb`，Android / iOS 共用。现在仍仅交付中文，完整翻译与语言切换后续实施；新增功能须同时维护资源，生成和维护步骤见 [界面文案指南](docs/LOCALIZATION_GUIDE.md)。
+
 ## 快速开始
 
 ### 环境要求
@@ -146,6 +148,7 @@ Version 0.1 暂不包含：
 git clone https://github.com/cyrusz2768-panda/Morpheus-App.git
 cd Morpheus-App
 flutter pub get
+flutter gen-l10n
 dart run build_runner build
 flutter analyze
 flutter test

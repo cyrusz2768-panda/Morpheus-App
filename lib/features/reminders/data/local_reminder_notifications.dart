@@ -3,6 +3,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
+import 'package:morpheus/l10n/app_text.dart';
+
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -32,8 +34,14 @@ tz.TZDateTime nextReminderTime(tz.TZDateTime now, int hour, int minute) {
 }
 
 class LocalReminderNotifications implements IReminderNotifications {
-  LocalReminderNotifications({FlutterLocalNotificationsPlugin? plugin})
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  LocalReminderNotifications({
+    FlutterLocalNotificationsPlugin? plugin,
+    AppLocalizations? strings,
+  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
+       _strings = strings ?? lookupAppLocalizations(morpheusLocale);
+
+  // 平台服务没有 BuildContext；使用应用注入的资源，通知不复制另一套文案。
+  final AppLocalizations _strings;
 
   static const dailyId = 1101;
   static const testId = 1102;
@@ -44,17 +52,17 @@ class LocalReminderNotifications implements IReminderNotifications {
   Future<bool>? _initialization;
   void Function()? _onTap;
 
-  static const _details = NotificationDetails(
+  NotificationDetails get _details => NotificationDetails(
     android: AndroidNotificationDetails(
       channelId,
-      '梦境记录提醒',
-      channelDescription: '在您选择的时间提醒记录梦境',
+      _strings.reminderChannelName,
+      channelDescription: _strings.reminderChannelDescription,
       icon: 'ic_stat_moon',
       importance: Importance.high,
       priority: Priority.high,
       visibility: NotificationVisibility.private,
     ),
-    iOS: DarwinNotificationDetails(
+    iOS: const DarwinNotificationDetails(
       presentAlert: true,
       presentBanner: true,
       presentList: true,
@@ -101,10 +109,10 @@ class LocalReminderNotifications implements IReminderNotifications {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(
-          const AndroidNotificationChannel(
+          AndroidNotificationChannel(
             channelId,
-            '梦境记录提醒',
-            description: '在您选择的时间提醒记录梦境',
+            _strings.reminderChannelName,
+            description: _strings.reminderChannelDescription,
             importance: Importance.high,
           ),
         );
@@ -169,8 +177,8 @@ class LocalReminderNotifications implements IReminderNotifications {
     final location = tz.getLocation(zone.identifier);
     await _plugin.zonedSchedule(
       id: dailyId,
-      title: '留下一点梦的记忆',
-      body: '醒来了吗？点击这里，记录今天的梦境吧。',
+      title: _strings.dailyNotificationTitle,
+      body: _strings.dailyNotificationBody,
       scheduledDate: nextReminderTime(
         tz.TZDateTime.now(location),
         settings.hour,
@@ -192,8 +200,8 @@ class LocalReminderNotifications implements IReminderNotifications {
   @override
   Future<void> showTest() => _plugin.show(
     id: testId,
-    title: '夜行者测试通知',
-    body: '通知已开启。点击这里，可以记录今天的梦境。',
+    title: _strings.testNotificationTitle,
+    body: _strings.testNotificationBody,
     notificationDetails: _details,
     payload: payload,
   );

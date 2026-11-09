@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:morpheus/app/theme.dart';
 import 'package:morpheus/features/dream_calendar/application/recorded_dream_dates_provider.dart';
 import 'package:morpheus/features/dream_calendar/data/calendar_repository.dart';
 import 'package:morpheus/features/dream_calendar/presentation/dream_calendar_page.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 void main() {
   late _CalendarRepository repository;
@@ -287,7 +287,7 @@ Future<_SelectionResult> _showCalendar(
         theme: buildAppTheme(),
         locale: const Locale('zh', 'CN'),
         supportedLocales: const [Locale('zh', 'CN')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:morpheus/l10n/app_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/features/dream_calendar/application/recorded_dream_dates_provider.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
@@ -63,9 +64,9 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
       firstDate: _firstDate,
       lastDate: _today,
       currentDate: _today,
-      helpText: '选择梦境日期',
-      cancelText: '取消',
-      confirmText: '确定',
+      helpText: context.l10n.selectDreamDate,
+      cancelText: context.l10n.cancel,
+      confirmText: context.l10n.confirm,
     );
     if (mounted && selected != null) {
       Navigator.pop<DateTime>(context, selected);
@@ -91,7 +92,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('梦境月历')),
+      appBar: AppBar(title: Text(context.l10n.dreamCalendar)),
       body: SafeArea(
         // 滚动容器应对小屏和大字号；宽屏限宽，避免七列日期相距太远。
         child: SingleChildScrollView(
@@ -102,7 +103,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('选择日期，查看或记录当天的梦境。'),
+                  Text(context.l10n.calendarPrompt),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -112,13 +113,13 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                         key: const Key('calendar-today-button'),
                         onPressed: _returnToToday,
                         icon: const Icon(Icons.today_outlined),
-                        label: const Text('回到今天'),
+                        label: Text(context.l10n.backToToday),
                       ),
                       TextButton.icon(
                         key: const Key('calendar-jump-date-button'),
                         onPressed: _jumpToDate,
                         icon: const Icon(Icons.date_range_outlined),
-                        label: const Text('选择日期'),
+                        label: Text(context.l10n.selectDate),
                       ),
                     ],
                   ),
@@ -133,7 +134,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                             children: [
                               IconButton(
                                 key: const Key('calendar-previous-month'),
-                                tooltip: '上个月',
+                                tooltip: context.l10n.previousMonth,
                                 onPressed: _focusedMonth.isAfter(_firstDate)
                                     ? () => _moveMonth(-1)
                                     : null,
@@ -141,7 +142,10 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                               ),
                               Expanded(
                                 child: Text(
-                                  '${_focusedMonth.year}年${_focusedMonth.month}月',
+                                  context.l10n.calendarMonth(
+                                    _focusedMonth.year,
+                                    _focusedMonth.month,
+                                  ),
                                   key: const Key('calendar-month-label'),
                                   textAlign: TextAlign.center,
                                   style: theme.textTheme.titleLarge,
@@ -149,7 +153,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                               ),
                               IconButton(
                                 key: const Key('calendar-next-month'),
-                                tooltip: '下个月',
+                                tooltip: context.l10n.nextMonth,
                                 onPressed: _focusedMonth.isBefore(lastMonth)
                                     ? () => _moveMonth(1)
                                     : null,
@@ -160,21 +164,19 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              for (final weekday in const [
-                                '一',
-                                '二',
-                                '三',
-                                '四',
-                                '五',
-                                '六',
-                                '日',
-                              ])
+                              for (
+                                var weekday = DateTime.monday;
+                                weekday <= DateTime.sunday;
+                                weekday++
+                              )
                                 Expanded(
                                   child: Center(
                                     child: Text(
-                                      weekday,
+                                      context.l10n.weekdayShort('$weekday'),
                                       style: theme.textTheme.labelLarge,
-                                      semanticsLabel: '星期$weekday',
+                                      semanticsLabel: context.l10n.weekdayLabel(
+                                        '$weekday',
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -198,7 +200,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(child: Text('有梦境记录')),
+                      Expanded(child: Text(context.l10n.hasDreamRecord)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -207,25 +209,25 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
                     skipLoadingOnReload: false,
                     loading: () => Semantics(
                       liveRegion: true,
-                      child: const Text('正在读取本月记录…'),
+                      child: Text(context.l10n.calendarLoading),
                     ),
                     error: (error, stackTrace) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '读取本月记录失败，记录标记暂不可用。',
+                          context.l10n.calendarLoadFailed,
                           style: TextStyle(color: theme.colorScheme.error),
                         ),
                         TextButton.icon(
                           key: const Key('calendar-retry-button'),
                           onPressed: () => ref.invalidate(monthProvider),
                           icon: const Icon(Icons.refresh),
-                          label: const Text('重试'),
+                          label: Text(context.l10n.retry),
                         ),
                       ],
                     ),
                     data: (dates) => dates.isEmpty
-                        ? const Text('本月还没有梦境记录，点击日期开始记录。')
+                        ? Text(context.l10n.calendarEmpty)
                         : const SizedBox.shrink(),
                   ),
                 ],
@@ -296,19 +298,21 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
     final hasRecord = recordedDates?.contains(dateKey) ?? false;
     final colors = Theme.of(context).colorScheme;
     final recordLabel = recordedDates == null
-        ? '记录状态暂不可用'
+        ? context.l10n.recordStatusUnavailable
         : hasRecord
-        ? '有梦境记录'
-        : '无梦境记录';
+        ? context.l10n.hasDreamRecord
+        : context.l10n.noDreamRecord;
 
     return Padding(
       padding: const EdgeInsets.all(2),
       child: Semantics(
         key: Key('calendar-day-$dateKey'),
-        label:
-            '${date.year}年${date.month}月${date.day}日'
-            '${isToday ? '，今天' : ''}，$recordLabel'
-            '${enabled ? '' : '，未来日期不可选择'}',
+        label: context.l10n.calendarDayLabel(
+          context.l10n.dreamDate(date.year, date.month, date.day),
+          isToday.toString(),
+          recordLabel,
+          enabled.toString(),
+        ),
         button: true,
         enabled: enabled,
         selected: selected,

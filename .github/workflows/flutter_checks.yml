@@ -28,6 +28,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # ARB 是文案源；单独生成一次确保干净 checkout 不依赖本机生成物。
+      - name: Generate localization code
+        run: flutter gen-l10n
+
       # 生成物不提交到仓库；干净机器必须先从表定义生成 Drift 访问代码。
       - name: Generate Drift database code
         run: dart run build_runner build

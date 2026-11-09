@@ -5,12 +5,15 @@ import 'package:morpheus/features/reminders/data/local_reminder_notifications.da
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:morpheus/features/reminders/data/reminder_settings_store.dart';
 import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 final reminderSettingsStoreProvider = Provider<IReminderSettingsStore>(
   (ref) => FileReminderSettingsStore(),
 );
 final reminderNotificationsProvider = Provider<IReminderNotifications>((ref) {
-  final service = LocalReminderNotifications();
+  final service = LocalReminderNotifications(
+    strings: ref.read(appLocalizationsProvider),
+  );
   ref.onDispose(service.dispose);
   return service;
 });
@@ -95,7 +98,9 @@ class ReminderController extends Notifier<ReminderState> {
       }
     } catch (_) {
       if (ref.mounted) {
-        state = state.copyWith(error: '提醒设置暂时无法加载，请重试。梦境记录仍可正常使用。');
+        state = state.copyWith(
+          error: ref.read(appLocalizationsProvider).reminderLoadFailed,
+        );
       }
     } finally {
       _working = false;
@@ -120,7 +125,9 @@ class ReminderController extends Notifier<ReminderState> {
       return ref.mounted && state.error == null;
     } catch (_) {
       if (ref.mounted) {
-        state = state.copyWith(error: '操作未完成，请重试；原来的提醒设置仍然保留。');
+        state = state.copyWith(
+          error: ref.read(appLocalizationsProvider).reminderOperationFailed,
+        );
       }
       return false;
     } finally {
@@ -157,7 +164,9 @@ class ReminderController extends Notifier<ReminderState> {
     if (!ref.mounted) return;
     state = state.copyWith(
       permissionGranted: granted,
-      error: granted ? null : '系统通知尚未开启。您可以稍后在系统设置中允许通知。',
+      error: granted
+          ? null
+          : ref.read(appLocalizationsProvider).reminderPermissionDenied,
     );
     await _applySchedule(state.settings!, granted);
   }
@@ -177,7 +186,11 @@ class ReminderController extends Notifier<ReminderState> {
       if (!ref.mounted) return;
       state = state.copyWith(permissionGranted: granted);
       if (!granted) {
-        state = state.copyWith(error: '开启每日提醒需要允许系统通知，请选择“去系统设置”。');
+        state = state.copyWith(
+          error: ref
+              .read(appLocalizationsProvider)
+              .reminderEnableNeedsPermission,
+        );
         return;
       }
     }
@@ -211,7 +224,11 @@ class ReminderController extends Notifier<ReminderState> {
     if (!ref.mounted) return;
     state = state.copyWith(permissionGranted: granted);
     if (!granted) {
-      state = state.copyWith(error: '请先允许系统通知，再发送测试通知。');
+      state = state.copyWith(
+        error: ref
+            .read(appLocalizationsProvider)
+            .testNotificationNeedsPermission,
+      );
       return;
     }
     await _notifications.showTest();

@@ -1,0 +1,8 @@
+# ARB 是手写文案源；Dart 访问代码由 Flutter 生成，不手改、不提交。
+arb-dir: lib/l10n
+template-arb-file: app_zh.arb
+output-dir: lib/l10n/generated
+output-localization-file: app_localizations.dart
+nullable-getter: false
+required-resource-attributes: true
+format: true

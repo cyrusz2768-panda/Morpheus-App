@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_search/application/dream_search_provider.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 /// 搜索页只管理输入与展示，查询交给 Provider / Repository，选中后只返回日期。
 /// 编辑、保存及失败保护继续复用原编辑器，避免产生第二套正文写入逻辑。
@@ -50,7 +51,7 @@ class _DreamSearchPageState extends ConsumerState<DreamSearchPage> {
         ? ref.watch(dreamSearchProvider(_keyword))
         : null;
     return Scaffold(
-      appBar: AppBar(title: const Text('搜索梦境')),
+      appBar: AppBar(title: Text(context.l10n.searchDreams)),
       body: SafeArea(
         child: Column(
           children: [
@@ -67,13 +68,13 @@ class _DreamSearchPageState extends ConsumerState<DreamSearchPage> {
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _focusNode.unfocus(),
                 decoration: InputDecoration(
-                  hintText: '搜索梦境正文',
+                  hintText: context.l10n.searchContentHint,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _textController.text.isEmpty
                       ? null
                       : IconButton(
                           key: const Key('clear-dream-search'),
-                          tooltip: '清空搜索',
+                          tooltip: context.l10n.clearSearch,
                           icon: const Icon(Icons.clear),
                           onPressed: () {
                             _textController.clear();
@@ -86,7 +87,9 @@ class _DreamSearchPageState extends ConsumerState<DreamSearchPage> {
             Expanded(
               child: results == null
                   ? _SearchMessage(
-                      text: _isComposing ? '完成输入后开始搜索' : '输入关键词，搜索梦境正文',
+                      text: _isComposing
+                          ? context.l10n.searchComposing
+                          : context.l10n.searchPrompt,
                     )
                   : results.when(
                       // 切词/重试时隐藏旧列表，不能把旧词的结果当作新词的结果。
@@ -95,12 +98,12 @@ class _DreamSearchPageState extends ConsumerState<DreamSearchPage> {
                       loading: () =>
                           const Center(child: CircularProgressIndicator()),
                       error: (error, stackTrace) => _SearchMessage(
-                        text: '搜索失败，请重试。',
+                        text: context.l10n.searchFailed,
                         onRetry: () =>
                             ref.invalidate(dreamSearchProvider(_keyword)),
                       ),
                       data: (entries) => entries.isEmpty
-                          ? const _SearchMessage(text: '没有找到匹配的梦境')
+                          ? _SearchMessage(text: context.l10n.searchNoResults)
                           : ListView.separated(
                               keyboardDismissBehavior:
                                   ScrollViewKeyboardDismissBehavior.onDrag,
@@ -118,7 +121,11 @@ class _DreamSearchPageState extends ConsumerState<DreamSearchPage> {
                                     Icons.description_outlined,
                                   ),
                                   title: Text(
-                                    '${date.year}年${date.month}月${date.day}日',
+                                    context.l10n.dreamDate(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                    ),
                                   ),
                                   subtitle: Text(
                                     _preview(entry.content, _keyword),
@@ -173,7 +180,7 @@ class _SearchMessage extends StatelessWidget {
           children: [
             Text(text, textAlign: TextAlign.center),
             if (onRetry != null)
-              TextButton(onPressed: onRetry, child: const Text('重试')),
+              TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
           ],
         ),
       ),

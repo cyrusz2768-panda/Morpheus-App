@@ -1,0 +1,406 @@
+{
+  "@@locale": "zh",
+  "appTitle": "夜行者",
+  "@appTitle": {
+    "description": "应用内标题；系统桌面名称仍由原生工程配置"
+  },
+  "retry": "重试",
+  "@retry": {
+    "description": "通用失败重试按钮"
+  },
+  "cancel": "取消",
+  "@cancel": {
+    "description": "选择器取消按钮"
+  },
+  "confirm": "确定",
+  "@confirm": {
+    "description": "选择器确认按钮"
+  },
+  "openMenu": "打开菜单",
+  "@openMenu": {
+    "description": "首页工具提示及引导按钮"
+  },
+  "closeMenu": "关闭菜单",
+  "@closeMenu": {
+    "description": "抽屉关闭按钮提示"
+  },
+  "menu": "菜单",
+  "@menu": {
+    "description": "菜单图标的读屏标签"
+  },
+  "notificationSettings": "通知设置",
+  "@notificationSettings": {
+    "description": "抽屉中的提醒设置入口"
+  },
+  "menuIntroTitle": "设置每日梦境提醒",
+  "@menuIntroTitle": {
+    "description": "首次菜单入口引导标题"
+  },
+  "gotIt": "知道了",
+  "@gotIt": {
+    "description": "关闭首次菜单引导"
+  },
+  "notificationNavigationFailed": "暂时无法打开当天记录，请先重试保存当前草稿。",
+  "@notificationNavigationFailed": {
+    "description": "通知点击后导航失败，草稿仍保留"
+  },
+  "navigationIncomplete": "操作尚未完成，请稍后重试。",
+  "@navigationIncomplete": {
+    "description": "编辑器导航尚未完成"
+  },
+  "searchDreams": "搜索梦境",
+  "@searchDreams": {
+    "description": "首页搜索工具提示和搜索页标题"
+  },
+  "selectDate": "选择日期",
+  "@selectDate": {
+    "description": "首页月历工具提示及快速选日按钮"
+  },
+  "dreamHistory": "历史梦境",
+  "@dreamHistory": {
+    "description": "历史页标题和工具提示"
+  },
+  "backToToday": "回到今天",
+  "@backToToday": {
+    "description": "返回当天记录或月历当天"
+  },
+  "editorTodayPrompt": "趁记忆还清晰，写下你刚刚梦见的内容。",
+  "@editorTodayPrompt": {
+    "description": "当天编辑提示"
+  },
+  "editorPastPrompt": "查看或补记这一天的梦境，修改后仍会自动保存。",
+  "@editorPastPrompt": {
+    "description": "历史日期编辑提示"
+  },
+  "dreamContentLabel": "梦境记录",
+  "@dreamContentLabel": {
+    "description": "正文输入框标签"
+  },
+  "dreamContentHint": "例如：我梦见自己走进了一座没有影子的城市……",
+  "@dreamContentHint": {
+    "description": "正文示例提示，不写入用户记录"
+  },
+  "saveIdle": "尚未修改",
+  "@saveIdle": {
+    "description": "保存状态：尚无修改"
+  },
+  "savePending": "等待自动保存",
+  "@savePending": {
+    "description": "保存状态：800ms 防抖等待"
+  },
+  "saveInProgress": "正在保存",
+  "@saveInProgress": {
+    "description": "保存状态：磁盘写入中"
+  },
+  "saveComplete": "已保存",
+  "@saveComplete": {
+    "description": "保存状态：最新草稿已落盘"
+  },
+  "operationFailed": "操作失败",
+  "@operationFailed": {
+    "description": "无具体错误信息时的兜底提示"
+  },
+  "refreshHistory": "刷新历史",
+  "@refreshHistory": {
+    "description": "历史页刷新工具提示"
+  },
+  "historyLoadFailed": "读取历史梦境失败，请重试。",
+  "@historyLoadFailed": {
+    "description": "历史查询失败"
+  },
+  "noDreamRecords": "还没有梦境记录",
+  "@noDreamRecords": {
+    "description": "历史空状态标题"
+  },
+  "historyEmptyPrompt": "返回编辑页，选择日期后即可开始记录。",
+  "@historyEmptyPrompt": {
+    "description": "历史空状态说明"
+  },
+  "searchContentHint": "搜索梦境正文",
+  "@searchContentHint": {
+    "description": "搜索输入框提示"
+  },
+  "clearSearch": "清空搜索",
+  "@clearSearch": {
+    "description": "搜索清除按钮提示"
+  },
+  "searchComposing": "完成输入后开始搜索",
+  "@searchComposing": {
+    "description": "输入法组词未确认时提示"
+  },
+  "searchPrompt": "输入关键词，搜索梦境正文",
+  "@searchPrompt": {
+    "description": "搜索空输入提示"
+  },
+  "searchFailed": "搜索失败，请重试。",
+  "@searchFailed": {
+    "description": "本地搜索失败"
+  },
+  "searchNoResults": "没有找到匹配的梦境",
+  "@searchNoResults": {
+    "description": "搜索无结果"
+  },
+  "selectDreamDate": "选择梦境日期",
+  "@selectDreamDate": {
+    "description": "日期选择器帮助标题"
+  },
+  "dreamCalendar": "梦境月历",
+  "@dreamCalendar": {
+    "description": "月历页标题"
+  },
+  "calendarPrompt": "选择日期，查看或记录当天的梦境。",
+  "@calendarPrompt": {
+    "description": "月历操作说明"
+  },
+  "previousMonth": "上个月",
+  "@previousMonth": {
+    "description": "月历前一月工具提示"
+  },
+  "nextMonth": "下个月",
+  "@nextMonth": {
+    "description": "月历后一月工具提示"
+  },
+  "hasDreamRecord": "有梦境记录",
+  "@hasDreamRecord": {
+    "description": "月历圆点图例及日期读屏状态"
+  },
+  "noDreamRecord": "无梦境记录",
+  "@noDreamRecord": {
+    "description": "月历日期读屏状态"
+  },
+  "recordStatusUnavailable": "记录状态暂不可用",
+  "@recordStatusUnavailable": {
+    "description": "月历尚未读取成功时的日期读屏状态"
+  },
+  "calendarLoading": "正在读取本月记录…",
+  "@calendarLoading": {
+    "description": "月历读取中提示"
+  },
+  "calendarLoadFailed": "读取本月记录失败，记录标记暂不可用。",
+  "@calendarLoadFailed": {
+    "description": "月历读取失败"
+  },
+  "calendarEmpty": "本月还没有梦境记录，点击日期开始记录。",
+  "@calendarEmpty": {
+    "description": "月历空月份说明"
+  },
+  "notificationNoticeTitle": "关于提醒通知",
+  "@notificationNoticeTitle": {
+    "description": "首次通知权限说明标题"
+  },
+  "notificationNoticeBody": "为了在您设定的时间提醒记录梦境，需要您允许系统通知。\n\n如果您愿意，请在接下来的系统提示中允许通知。您也可以稍后开启，这不会影响记录和查看梦境。",
+  "@notificationNoticeBody": {
+    "description": "应用内说明，不是系统授权弹窗"
+  },
+  "later": "稍后再说",
+  "@later": {
+    "description": "暂不申请通知权限"
+  },
+  "allowNotifications": "允许通知",
+  "@allowNotifications": {
+    "description": "确认说明并申请通知权限"
+  },
+  "selectReminderTime": "选择每日提醒时间",
+  "@selectReminderTime": {
+    "description": "时间选择器帮助标题"
+  },
+  "dailyReminder": "每日提醒",
+  "@dailyReminder": {
+    "description": "提醒设置页标题及开关标签"
+  },
+  "reminderPrompt": "给醒来的自己留一点时间，记下还没散去的梦。",
+  "@reminderPrompt": {
+    "description": "提醒页说明"
+  },
+  "retryLoad": "重试加载",
+  "@retryLoad": {
+    "description": "提醒配置加载失败后的按钮"
+  },
+  "reminderWaitingPermission": "已开启，等待系统通知权限",
+  "@reminderWaitingPermission": {
+    "description": "已保存开启意愿但系统未授权"
+  },
+  "reminderDisabled": "尚未开启",
+  "@reminderDisabled": {
+    "description": "每日提醒关闭状态"
+  },
+  "reminderTime": "提醒时间",
+  "@reminderTime": {
+    "description": "提醒时间设置项"
+  },
+  "systemNotifications": "系统通知",
+  "@systemNotifications": {
+    "description": "系统权限状态标题"
+  },
+  "notificationsAllowed": "已允许通知",
+  "@notificationsAllowed": {
+    "description": "系统权限已允许"
+  },
+  "notificationsNotAllowed": "尚未允许通知",
+  "@notificationsNotAllowed": {
+    "description": "系统权限未允许"
+  },
+  "requestNotificationPermission": "申请通知权限",
+  "@requestNotificationPermission": {
+    "description": "再次申请系统权限按钮"
+  },
+  "openSystemSettings": "去系统设置",
+  "@openSystemSettings": {
+    "description": "打开系统通知设置"
+  },
+  "sendTestNotification": "发送测试通知",
+  "@sendTestNotification": {
+    "description": "发送即时测试通知按钮"
+  },
+  "reminderAutoSaveNote": "设置会自动保存。测试通知不会开启每日提醒。",
+  "@reminderAutoSaveNote": {
+    "description": "提醒自动保存说明"
+  },
+  "reminderSystemLimitNote": "提醒可能受系统节电、静音或专注模式影响。Android 的普通提醒可能稍有延迟。",
+  "@reminderSystemLimitNote": {
+    "description": "普通通知时效边界"
+  },
+  "reminderLoadFailed": "提醒设置暂时无法加载，请重试。梦境记录仍可正常使用。",
+  "@reminderLoadFailed": {
+    "description": "提醒 Controller 加载失败"
+  },
+  "reminderOperationFailed": "操作未完成，请重试；原来的提醒设置仍然保留。",
+  "@reminderOperationFailed": {
+    "description": "提醒 Controller 操作失败"
+  },
+  "reminderPermissionDenied": "系统通知尚未开启。您可以稍后在系统设置中允许通知。",
+  "@reminderPermissionDenied": {
+    "description": "申请通知权限未获允许"
+  },
+  "reminderEnableNeedsPermission": "开启每日提醒需要允许系统通知，请选择“去系统设置”。",
+  "@reminderEnableNeedsPermission": {
+    "description": "开启提醒但无权限"
+  },
+  "testNotificationNeedsPermission": "请先允许系统通知，再发送测试通知。",
+  "@testNotificationNeedsPermission": {
+    "description": "无权限时发送测试通知"
+  },
+  "reminderChannelName": "梦境记录提醒",
+  "@reminderChannelName": {
+    "description": "Android 通知渠道显示名；渠道 ID 不变"
+  },
+  "reminderChannelDescription": "在您选择的时间提醒记录梦境",
+  "@reminderChannelDescription": {
+    "description": "Android 通知渠道说明"
+  },
+  "dailyNotificationTitle": "留下一点梦的记忆",
+  "@dailyNotificationTitle": {
+    "description": "每日通知标题，不含梦境正文"
+  },
+  "dailyNotificationBody": "醒来了吗？点击这里，记录今天的梦境吧。",
+  "@dailyNotificationBody": {
+    "description": "每日通知正文，不含用户数据"
+  },
+  "testNotificationTitle": "夜行者测试通知",
+  "@testNotificationTitle": {
+    "description": "即时测试通知标题"
+  },
+  "testNotificationBody": "通知已开启。点击这里，可以记录今天的梦境。",
+  "@testNotificationBody": {
+    "description": "即时测试通知正文"
+  },
+  "dreamDate": "{year}年{month}月{day}日",
+  "@dreamDate": {
+    "description": "编辑器、历史、搜索和读屏使用的完整日期；仅显示，不改变数据库日期键",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarMonth": "{year}年{month}月",
+  "@calendarMonth": {
+    "description": "月历月份标题",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      }
+    }
+  },
+  "weekdayShort": "{weekday, select, 1{一} 2{二} 3{三} 4{四} 5{五} 6{六} other{日}}",
+  "@weekdayShort": {
+    "description": "周一到周日的短名称；weekday 为 1 到 7",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayLabel": "{weekday, select, 1{星期一} 2{星期二} 3{星期三} 4{星期四} 5{星期五} 6{星期六} other{星期日}}",
+  "@weekdayLabel": {
+    "description": "星期标题的完整读屏名称",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayLabel": "{date}{isToday, select, true{，今天} other{}}，{recordStatus}{isEnabled, select, false{，未来日期不可选择} other{}}",
+  "@calendarDayLabel": {
+    "description": "月历日期完整读屏标签；布尔值传 true/false，翻译可调整整句顺序与标点",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "isToday": {
+        "type": "String"
+      },
+      "recordStatus": {
+        "type": "String"
+      },
+      "isEnabled": {
+        "type": "String"
+      }
+    }
+  },
+  "menuIntroBody": "点击左上角的 {menuIcon} 按钮，可设置每日记录梦境通知的发送时间。",
+  "@menuIntroBody": {
+    "description": "菜单教学完整句子；menuIcon 是真正的菜单图标，占位符应保留一次并可按语言移动位置",
+    "placeholders": {
+      "menuIcon": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDailyAt": "每天 {time} 提醒记录梦境",
+  "@reminderDailyAt": {
+    "description": "提醒已开启时的说明，time 是 HH:mm",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dreamLoadFailed": "读取梦境失败：{details}",
+  "@dreamLoadFailed": {
+    "description": "保留原有错误详情；详情是运行时技术异常，不属于可翻译界面文案",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "dreamSaveFailed": "保存梦境失败：{details}",
+  "@dreamSaveFailed": {
+    "description": "保留原有保存错误详情及草稿重试行为",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_history/application/dream_history_provider.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 /// 按梦境所属日期倒序回顾已保存记录，沿用现有 Material 主题。
 ///
@@ -17,10 +18,10 @@ class DreamHistoryPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('历史梦境'),
+        title: Text(context.l10n.dreamHistory),
         actions: [
           IconButton(
-            tooltip: '刷新历史',
+            tooltip: context.l10n.refreshHistory,
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.invalidate(dreamHistoryProvider),
           ),
@@ -33,28 +34,28 @@ class DreamHistoryPage extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('读取历史梦境失败，请重试。'),
+                Text(context.l10n.historyLoadFailed),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => ref.invalidate(dreamHistoryProvider),
-                  child: const Text('重试'),
+                  child: Text(context.l10n.retry),
                 ),
               ],
             ),
           ),
           data: (entries) {
             if (entries.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_stories_outlined, size: 40),
-                      SizedBox(height: 12),
-                      Text('还没有梦境记录'),
-                      SizedBox(height: 8),
-                      Text('返回编辑页，选择日期后即可开始记录。'),
+                      const Icon(Icons.auto_stories_outlined, size: 40),
+                      const SizedBox(height: 12),
+                      Text(context.l10n.noDreamRecords),
+                      const SizedBox(height: 8),
+                      Text(context.l10n.historyEmptyPrompt),
                     ],
                   ),
                 ),
@@ -73,7 +74,9 @@ class DreamHistoryPage extends ConsumerWidget {
                 return ListTile(
                   key: Key('history-entry-${DreamEntry.dateKey(date)}'),
                   leading: const Icon(Icons.description_outlined),
-                  title: Text('${date.year}年${date.month}月${date.day}日'),
+                  title: Text(
+                    context.l10n.dreamDate(date.year, date.month, date.day),
+                  ),
                   subtitle: Text(
                     entry.content.replaceAll(RegExp(r'\s+'), ' ').trim(),
                     maxLines: 2,

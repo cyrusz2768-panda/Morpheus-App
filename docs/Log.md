@@ -2,6 +2,15 @@
 
 ## 2026-11-09
 
+- 基于最新主线 `66b6b0d` 开始集中管理当前版本文案，含当天新增的正文搜索。工作区起始干净；Git fetch 网络等待后终止，通过已授权 GitHub 连接器确认远程 main 与本地相同。
+- 新增 `lib/l10n/app_zh.arb`（85 条带语境说明的中文资源）、`l10n.yaml` 与资源访问辅助代码，接入 Flutter gen-l10n。页面、日期/星期、读屏提示、菜单图标完整句子、Controller 错误与通知渠道/正文统一读取资源。当前保持中文，不宣称完整英文支持或语言选择完成；梦境正文、数据库版本、提醒 JSON、通知 ID/payload 和草稿保护流程不变。
+- `intl` 由既有间接依赖改为直接依赖，锁定版本仍为 0.20.3，无依赖升级。生成目录不提交，本机和 CI 显式生成；新增 `docs/LOCALIZATION_GUIDE.md`，将“每次功能同步维护 ARB、每个功能检查遗漏、完整翻译按版本审校”写入 AGENTS.md。
+- 本轮 `flutter pub get`、`flutter gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --no-pub --reporter expanded` 通过，完整 150 项。Flutter SDK 查新等待超时后实际使用全局 `--no-version-check`。新增 3 项验证英文系统下中文接线、Controller 资源注入、Android 通知/渠道从资源生成；所有数据库测试继续使用独立测试数据。
+
+- 文案集中管理双端调试构建通过：`flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`（Gradle 18.6 秒）、`flutter --no-version-check build ios --simulator --debug --no-pub`（Xcode 30.2 秒）。本轮未安装启动或人工验收，不操作现有模拟器数据。
+
+- 本轮命令行 `git push origin main` 因 GitHub HTTPS 低速网络超时失败，改用已授权 GitHub 连接器同步同一文件树到主线，不创建 PR；交付前后核验远程父提交与文件树，本地原提交保留在 `codex/local-l10n` 供追溯。实际远程提交及 CI 结果以 GitHub 核验为准。
+
 - 在主线 `fa51ad5` 上新增双端共用的梦境正文搜索：首页 🔍 打开独立搜索页，自动聚焦并请求键盘，300ms 防抖，中文组词等待确认；结果按日期倒序，预览命中附近文字，点击后复用原编辑器。
 - 独立只读搜索接口通过 Drift 查询既有表；绑定参数并转义通配符，不新增依赖、不改 schemaVersion 1、不保存搜索历史或上传正文。保持导航前最新草稿保存、保存失败保留输入、空白删除、通知返回当天及旧异步结果隔离。
 - `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` 通过；完整 147 项，新增 13 项搜索测试。数据库测试使用独立临时文件/内存，不操作用户数据。

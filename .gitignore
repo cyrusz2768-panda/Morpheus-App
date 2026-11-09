@@ -47,3 +47,6 @@ outputs/
 .env
 .env.*
 !.env.example
+
+# Flutter gen-l10n 文案代码由 ARB 生成，本机和 CI 恢复。
+lib/l10n/generated/

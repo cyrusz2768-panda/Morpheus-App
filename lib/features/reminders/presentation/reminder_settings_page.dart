@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 class ReminderSettingsPage extends ConsumerStatefulWidget {
   const ReminderSettingsPage({super.key});
@@ -20,20 +21,16 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         key: const Key('notification-permission-notice'),
-        title: const Text('关于提醒通知'),
-        content: const Text(
-          '为了在您设定的时间提醒记录梦境，需要您允许系统通知。'
-          '\n\n如果您愿意，请在接下来的系统提示中允许通知。'
-          '您也可以稍后开启，这不会影响记录和查看梦境。',
-        ),
+        title: Text(context.l10n.notificationNoticeTitle),
+        content: Text(context.l10n.notificationNoticeBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('稍后再说'),
+            child: Text(context.l10n.later),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('允许通知'),
+            child: Text(context.l10n.allowNotifications),
           ),
         ],
       ),
@@ -49,9 +46,9 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: '选择每日提醒时间',
-      cancelText: '取消',
-      confirmText: '确定',
+      helpText: context.l10n.selectReminderTime,
+      cancelText: context.l10n.cancel,
+      confirmText: context.l10n.confirm,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
         child: child!,
@@ -80,14 +77,14 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
     }
     final editable = settings != null && !state.isLoading && !state.isBusy;
     return Scaffold(
-      appBar: AppBar(title: const Text('每日提醒')),
+      appBar: AppBar(title: Text(context.l10n.dailyReminder)),
       body: SafeArea(
         child: state.isLoading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  const Text('给醒来的自己留一点时间，记下还没散去的梦。'),
+                  Text(context.l10n.reminderPrompt),
                   const SizedBox(height: 20),
                   if (state.error != null) ...[
                     Text(
@@ -99,7 +96,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     ),
                     TextButton(
                       onPressed: state.isBusy ? null : controller.load,
-                      child: const Text('重试加载'),
+                      child: Text(context.l10n.retryLoad),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -107,13 +104,15 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     SwitchListTile(
                       key: const Key('daily-reminder-switch'),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('每日提醒'),
+                      title: Text(context.l10n.dailyReminder),
                       subtitle: Text(
                         settings.enabled
                             ? state.permissionGranted
-                                  ? '每天 ${settings.timeLabel} 提醒记录梦境'
-                                  : '已开启，等待系统通知权限'
-                            : '尚未开启',
+                                  ? context.l10n.reminderDailyAt(
+                                      settings.timeLabel,
+                                    )
+                                  : context.l10n.reminderWaitingPermission
+                            : context.l10n.reminderDisabled,
                       ),
                       value: settings.enabled,
                       onChanged: editable ? controller.setEnabled : null,
@@ -121,7 +120,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     ListTile(
                       key: const Key('reminder-time-tile'),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('提醒时间'),
+                      title: Text(context.l10n.reminderTime),
                       trailing: Text(
                         settings.timeLabel,
                         key: const Key('reminder-time'),
@@ -131,9 +130,11 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     const Divider(),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('系统通知'),
+                      title: Text(context.l10n.systemNotifications),
                       subtitle: Text(
-                        state.permissionGranted ? '已允许通知' : '尚未允许通知',
+                        state.permissionGranted
+                            ? context.l10n.notificationsAllowed
+                            : context.l10n.notificationsNotAllowed,
                       ),
                     ),
                     if (!state.permissionGranted)
@@ -141,24 +142,24 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                         onPressed: editable
                             ? controller.requestPermission
                             : null,
-                        child: const Text('申请通知权限'),
+                        child: Text(context.l10n.requestNotificationPermission),
                       ),
                     TextButton(
                       onPressed: editable
                           ? controller.openSystemSettings
                           : null,
-                      child: const Text('去系统设置'),
+                      child: Text(context.l10n.openSystemSettings),
                     ),
                     OutlinedButton.icon(
                       key: const Key('test-notification-button'),
                       onPressed: editable ? controller.showTest : null,
                       icon: const Icon(Icons.notifications_outlined),
-                      label: const Text('发送测试通知'),
+                      label: Text(context.l10n.sendTestNotification),
                     ),
                     const SizedBox(height: 12),
-                    const Text('设置会自动保存。测试通知不会开启每日提醒。'),
+                    Text(context.l10n.reminderAutoSaveNote),
                     const SizedBox(height: 8),
-                    const Text('提醒可能受系统节电、静音或专注模式影响。Android 的普通提醒可能稍有延迟。'),
+                    Text(context.l10n.reminderSystemLimitNote),
                   ],
                   if (state.isBusy)
                     const Padding(

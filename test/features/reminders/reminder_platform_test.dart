@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:morpheus/features/reminders/data/local_reminder_notifications.dart';
 import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
 
+import 'package:morpheus/l10n/generated/app_localizations_zh.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('dexterous.com/flutter/local_notifications');
@@ -102,9 +104,57 @@ void main() {
     expect(request['badge'], isFalse);
   });
 
+  test('通知与 Android 渠道从注入资源读取，稳定 ID 和 payload 不变', () async {
+    service.dispose();
+    service = LocalReminderNotifications(strings: _NotificationResources());
+    await service.initialize(() {});
+    await service.scheduleDaily(ReminderSettings(enabled: true));
+    await service.showTest();
+
+    final channelArgs =
+        calls
+                .firstWhere(
+                  (call) => call.method == 'createNotificationChannel',
+                )
+                .arguments
+            as Map;
+    expect(channelArgs['name'], 'resource channel');
+    expect(channelArgs['description'], 'resource description');
+    final daily =
+        calls.firstWhere((call) => call.method == 'zonedSchedule').arguments
+            as Map;
+    expect(daily['title'], 'resource daily title');
+    expect(daily['body'], 'resource daily body');
+    expect(
+      (daily['platformSpecifics'] as Map)['channelName'],
+      'resource channel',
+    );
+    final test =
+        calls.firstWhere((call) => call.method == 'show').arguments as Map;
+    expect(test['title'], 'resource test title');
+    expect(test['body'], 'resource test body');
+    expect(test['payload'], LocalReminderNotifications.payload);
+  });
+
   test('系统设置无法打开时报告失败，让页面提供重试', () async {
     await service.initialize(() {});
     canOpenSettings = false;
     await expectLater(service.openSystemSettings(), throwsStateError);
   });
+}
+
+// 用不同于正式中文的测试资源验证整条桥接链路，不调用真实系统通知。
+class _NotificationResources extends AppLocalizationsZh {
+  @override
+  String get reminderChannelName => 'resource channel';
+  @override
+  String get reminderChannelDescription => 'resource description';
+  @override
+  String get dailyNotificationTitle => 'resource daily title';
+  @override
+  String get dailyNotificationBody => 'resource daily body';
+  @override
+  String get testNotificationTitle => 'resource test title';
+  @override
+  String get testNotificationBody => 'resource test body';
 }

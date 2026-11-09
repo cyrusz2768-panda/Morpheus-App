@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 /// 左侧抽屉只展示菜单；保存草稿和导航仍由编辑页协调。
 /// Drawer 自带从左侧进入、点击遮罩关闭和返回手势，不必自行实现动画。
@@ -30,12 +31,12 @@ class EditorMenuDrawer extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '夜行者',
+                      context.l10n.appTitle,
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ),
                   IconButton(
-                    tooltip: '关闭菜单',
+                    tooltip: context.l10n.closeMenu,
                     onPressed: onClose,
                     icon: const Icon(Icons.close),
                   ),
@@ -50,7 +51,7 @@ class EditorMenuDrawer extends StatelessWidget {
                 vertical: 8,
               ),
               leading: const Icon(Icons.notifications_outlined),
-              title: const Text('通知设置'),
+              title: Text(context.l10n.notificationSettings),
               onTap: canNavigate ? onOpenReminders : null,
             ),
           ],

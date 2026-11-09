@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
 import 'package:morpheus/features/dream_editor/data/dream_providers.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
+import 'package:morpheus/l10n/app_text.dart';
 
 // 保持旧测试及现有调用方的导入路径可用；实际绑定统一放在 data 层。
 // Controller 只依赖仓库接口对应的 Provider，不关心底层是 SQLite 还是测试替身。
@@ -173,7 +174,9 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         date: normalizedDate,
         isLoading: false,
         saveStatus: DreamSaveStatus.failed,
-        errorMessage: '读取梦境失败：$error',
+        errorMessage: ref
+            .read(appLocalizationsProvider)
+            .dreamLoadFailed(error.toString()),
         failure: DreamEditorFailure.load,
       );
       return false;
@@ -260,7 +263,9 @@ class DreamEditorController extends Notifier<DreamEditorState> {
       if (ref.mounted) {
         state = state.copyWith(
           saveStatus: DreamSaveStatus.failed,
-          errorMessage: '保存梦境失败：$error',
+          errorMessage: ref
+              .read(appLocalizationsProvider)
+              .dreamSaveFailed(error.toString()),
           failure: DreamEditorFailure.save,
         );
       }
