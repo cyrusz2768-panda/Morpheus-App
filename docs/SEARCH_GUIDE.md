@@ -35,11 +35,14 @@
 
 ## 本轮验证
 
-检查日期：2026-11-09。基线：`fa51ad5` 上的本轮搜索改动，最终提交见 Git 日志。
+检查日期：2026-11-09。功能提交：`a2bb0c1`（基于 `fa51ad5`）。
 
 - `dart format --output=none --set-exit-if-changed lib test`：通过。
 - `flutter analyze --no-pub`：通过。
 - `flutter test --reporter expanded`：147 项通过，其中新增 13 项搜索测试。
+- Android ARM64 调试包与 iOS 模拟器调试构建通过，GitHub Actions 通过。
+- iPhone 18 Pro / iOS 27.2 已安装启动并显示首页与 🔍；搜索结果和系统键盘
+  留待用户操作确认。原 iPhone 17 因系统服务等待未完成本轮升级，原数据保留。
 - 数据库测试使用独立内存/临时文件，覆盖中文、跨行、emoji、英文字母大小写、
   通配符和引号、日期排序、原文保留、删除更新、失败与文件重开。
 - 应用路由测试覆盖自动聚焦和测试输入连接、组词确认、防抖、旧请求晚到、清空、

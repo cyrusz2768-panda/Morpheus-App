@@ -5,8 +5,10 @@
 - 在主线 `fa51ad5` 上新增双端共用的梦境正文搜索：首页 🔍 打开独立搜索页，自动聚焦并请求键盘，300ms 防抖，中文组词等待确认；结果按日期倒序，预览命中附近文字，点击后复用原编辑器。
 - 独立只读搜索接口通过 Drift 查询既有表；绑定参数并转义通配符，不新增依赖、不改 schemaVersion 1、不保存搜索历史或上传正文。保持导航前最新草稿保存、保存失败保留输入、空白删除、通知返回当天及旧异步结果隔离。
 - `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` 通过；完整 147 项，新增 13 项搜索测试。数据库测试使用独立临时文件/内存，不操作用户数据。
-- 新增 `docs/SEARCH_GUIDE.md`，同步项目状态、README 与 CHANGELOG。双端原生构建、iOS 模拟器及远程交付结果在完成后追加，不把自动测试视为用户人工验收。
-- 双端调试构建通过：`flutter build apk --debug --target-platform android-arm64 --no-pub`（27.5 秒）、`flutter build ios --simulator --debug --no-pub`（Xcode 99.5 秒）。Android 未启动或人工验收；iOS 使用原安装保留数据升级，不卸载、不清库。
+- 新增 `docs/SEARCH_GUIDE.md`，同步项目状态、README 与 CHANGELOG；下列记录区分原生构建、启动画面与待用户验收，不把自动测试视为人工验收。
+- 双端调试构建通过：`flutter build apk --debug --target-platform android-arm64 --no-pub`（27.5 秒）、`flutter build ios --simulator --debug --no-pub`（Xcode 99.5 秒）。Android 未启动或人工验收；iOS 的实际安装启动见下条，未卸载或清除原设备数据。
+- 原 iPhone 17 的系统桌面/安装服务等待，保留数据重启未立即恢复，改用 iPhone 18 Pro / iOS 27.2。等待备用设备首次初始化与系统索引完成后，安装启动成功；通过 `flutter run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定实际设备）连接 Dart VM，实际首页与 🔍 已显示。窗口留给用户；搜索结果和系统键盘人工验收待确认，原设备数据未改动。
+- 命令行 `git push origin main` 仍因缺少 HTTPS 登录失败；使用已授权 GitHub 连接器将相同文件树直接提交到 `main`，功能提交 `a2bb0c1`，未创建 PR。核验远程文件树与本地逐字节一致、fetch 后本地主线对齐；原未发布的本地提交保存在 `codex/local-dream-search`。GitHub Actions [运行 42565723874](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/42565723874) 成功。
 
 ## 2026-11-08
 

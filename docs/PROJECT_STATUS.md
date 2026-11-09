@@ -19,7 +19,7 @@
 ## 2. 代码与交付基线
 
 - 仓库：[cyrusz2768-panda/Morpheus-App](https://github.com/cyrusz2768-panda/Morpheus-App)。现有本地专案“夜行者/Morpheus”使用此仓库根目录，无需重新创建工程或仓库。
-- 本轮搜索基于主线 `fa51ad5` 开发，新增 13 项测试，完整 147 项通过；最终搜索交付提交见 Git 日志。此前月历、菜单基线为 `a7c8c4e`，134 项是当时的历史测试数。
+- 本轮搜索交付提交为 `a2bb0c1`，基于主线 `fa51ad5`，新增 13 项测试，完整 147 项通过。此前月历、菜单基线为 `a7c8c4e`，134 项是当时的历史测试数。
 - 历史 PR：[#2 工程与 SQLite](https://github.com/cyrusz2768-panda/Morpheus-App/pull/2)、[#3 日期与历史](https://github.com/cyrusz2768-panda/Morpheus-App/pull/3)、[#4 每日提醒](https://github.com/cyrusz2768-panda/Morpheus-App/pull/4) 已合并；[#5 月历与菜单](https://github.com/cyrusz2768-panda/Morpheus-App/pull/5) 创建后检查通过。
 - 本次交接整理以已验证的 #5 功能基线及交接文档为内容，直接整合到 `main` 交付。以后先核对实时 Git / GitHub 状态，不依据本文假定 PR 仍开放或提交号永远不变。
 - 原始分步提交保存在本地 `backup/*-reviewed-*` 分支，不是另一套工程；保留以便追溯，不必重复开发或重复上传。
@@ -52,6 +52,8 @@
 |---|---|---|
 | 2026-11-09，`fa51ad5` 上的搜索改动 | `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` | 全部通过，147 项；新增 13 项覆盖真实 SQLite、异步结果、输入法确认、焦点与导航草稿保护 |
 | 2026-11-09，同上 | `flutter build apk --debug --target-platform android-arm64 --no-pub`、`flutter build ios --simulator --debug --no-pub` | 双端构建通过（Android 27.5 秒、Xcode 99.5 秒）；Android 未启动或人工验收 |
+| 2026-11-09，`a2bb0c1` | [GitHub Actions 运行 42565723874](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/42565723874) | `Flutter checks` 成功；不含原生构建或人工验收 |
+| 2026-11-09，同上 | iPhone 18 Pro / iOS 27.2 安装、`flutter run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（运行时使用实际设备参数） | Dart VM 连接成功，实际首页与 🔍 入口已显示，留给用户验收。搜索结果/系统键盘尚待用户实际操作确认；原 iPhone 17 数据保留 |
 | 2026-11-03，M1 初版 | 依赖恢复、Drift 生成、格式、分析、28 项测试 | 通过，PR #2 CI 通过 |
 | 2026-11-04 | Android 基础记录、保存重开；随后日期/历史 57 项测试 | 用户确认基础功能与日期/历史验收通过 |
 | 2026-11-06 | iOS 基础记录与日期/历史；每日提醒 90 项测试、双端构建启动 | 用户确认基础功能及本轮提醒验收通过 |
@@ -99,6 +101,7 @@ M1 原计划的逐项审计：
 - SQLite 原生库曾因 GitHub 下载中断导致双端构建卡住，已从官方来源下载并校验后恢复。本机缓存不入库；换机仍可能需要联网下载。
 - Flutter startup lock 曾由另一个 Flutter 进程占用；先识别现有进程，避免同时运行多条 Flutter 命令或盲删锁文件。
 - 模拟器曾有系统 UI/安装服务等待；保留数据重启后已恢复。故障恢复不要以卸载或清空数据作为第一步。
+- 2026-11-09 原 iPhone 17 再次出现系统 UI/安装等待，保留数据关闭后改用 iPhone 18 Pro；备用设备首次初始化/系统索引耗时较长，等待后正常安装、启动并显示首页。当前 Xcode 的模拟器前端是其应用目录中的 Device Hub，不能假定旧版 Simulator 应用路径仍存在。未清空、卸载或迁移原设备数据。
 - Java 原生访问或 SDK 版本警告需要结合最终错误判断；曾出现的下载失败才是当时的直接阻塞，不为消除警告擅自改动依赖源码。
 
 ## 7. 新对话开始和结束
