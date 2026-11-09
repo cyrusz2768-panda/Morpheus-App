@@ -1,5 +1,18 @@
 # 开发日志
 
+## 2026-11-10
+
+- 基于主线 `a234951` 开发周／月／年统计与底部导航，起始工作区干净；已执行 `git fetch origin` 并确认本地主线无落后提交。
+- 新增 `IStatisticsRepository`、Drift 有效日期实时投影及独立聚合层。周一开周、自然月／年，统计记录天数、截至今天的覆盖率、双休日／平日占比、趋势及上期天数差；按 dreamDate 归属，补记落入旧周期、同日修改不重复计数、清空删除实时减少。趋势按日／本月裁切周／月分组，未来分组区别显示，空数据与读失败分别处理。无新依赖、数据库迁移或统计缓存。
+- 新增实色圆角底栏「记录、统计、日历」，沿用既有紫色主题；顶级日历选日回编辑器，旧快捷选日保留为全屏选择器。顶栏／底栏／选日共用导航令牌，切换前循环 flush 最新草稿，失败留在原页；提醒通知撤销旧意图并持有导航锁，避免异步保存完成后跳回旧目标。
+- 用户明确要求新增文字在验收成功后再同步资源，因此本轮新增统计／底栏文字暂不改 ARB，既有资源继续使用。好梦／噩梦记录尚未开发，首版省略该比例。此例外不改变后续默认文案规则。
+- `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` 全部通过，完整 172 项，新增 22 项涵盖跨年周、闰月、当前短月末同期比较、真实 SQLite 补记／修改／删除及重开、页面重试／实时变更／大字号、实际底栏导航及通知竞态。测试均使用人工内容和独立测试数据。
+- `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` 通过（Gradle 20.5 秒）；按用户要求，本轮 Android 不启动模拟器人工验收。
+- `flutter --no-version-check build ios --simulator --debug --no-pub` 通过（Xcode 55.5 秒）；在原 iPhone 18 Pro 上保留数据升级安装，不卸载或清库。
+- 新增 `docs/STATISTICS_GUIDE.md`，同步 README、PROJECT_STATUS 与 CHANGELOG；iOS 安装启动与主线交付结果继续记录如下，不把构建或自动测试标成人工验收完成。
+- 使用已构建 Runner.app 在当前 iPhone 18 Pro / iOS 27.2 上保留数据升级启动。安装／启动服务等待后，实际窗口已显示周统计和「记录、统计、日历」底栏，留给用户验收；没有写入人工记录到用户沙盒，也未标记完整人工验收或真机验证完成。
+- 本地功能提交 `5583ef1`。推送前再次 fetch 并核对远程 main，命令行 `git push origin main` 因无法读取 GitHub HTTPS 用户名失败；按已有授权改用 GitHub 连接器直接同步同一文件树到主线，不创建 PR。远程父提交、文件树与 CI 在交付时核验；不将本地 push 记为成功。
+
 ## 2026-11-09
 
 - 基于最新主线 `66b6b0d` 开始集中管理当前版本文案，含当天新增的正文搜索。工作区起始干净；Git fetch 网络等待后终止，通过已授权 GitHub 连接器确认远程 main 与本地相同。

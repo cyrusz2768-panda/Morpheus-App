@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-09。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-10。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -11,12 +11,15 @@
 | 阶段 | 范围 | 当前情况 |
 |---|---|---|
 | M1 | 工程、当天编辑、自动保存、SQLite 持久化、基础测试与双端运行 | 核心完成；Android 11-04、iOS 11-06 的基础验收已有用户确认；干净克隆双端完整手工复现记录待补 |
-| M2 | 日期选择、历史列表、月历回顾、正文搜索 | 已实现并有自动测试；搜索新增 🔍 入口与独立页面，平台验证见下文 |
+| M2 | 日期选择、历史列表、月历回顾、正文搜索、基础周期统计 | 已实现并有自动测试；搜索新增 🔍 入口与独立页面，平台验证见下文 |
 | M3 | 用户设定时间的本地提醒 | 已实现，用户已确认此前双端提醒功能验收通过；真机长期后台等归后续验证 |
 | M4 | HealthKit / Health Connect 技术验证及醒来提醒 | 未开始，不承诺实时检测醒来 |
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
 
 ## 2. 代码与交付基线
+
+- 2026-11-10 统计与底栏开发基于 `a234951`，起始工作区干净，已获取远程并确认无新增主线提交；统计与底栏功能已实现，用户人工验收及新增文字 ARB 同步待完成。当前轮检查记录见第 4 节。
+- 本轮本地功能提交 `5583ef1`；命令行主线 push 因缺少 GitHub HTTPS 登录失败，交付改用已授权连接器同步相同文件树并核验远程基线，未创建 PR。原本地提交保留供追溯。
 
 - 仓库：[cyrusz2768-panda/Morpheus-App](https://github.com/cyrusz2768-panda/Morpheus-App)。现有本地专案“夜行者/Morpheus”使用此仓库根目录，无需重新创建工程或仓库。
 - 本轮文案交付的命令行 push 遇到 GitHub HTTPS 网络超时，采用已授权连接器同步相同文件树；本地原提交保留在 `codex/local-l10n`，远程提交与 CI 需实时核验。
@@ -30,13 +33,15 @@
 
 | 功能 | 实际行为与主要入口 |
 |---|---|
-| 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/calendar`、`/reminders` |
+| 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/statistics`、`/calendar`、`/calendar-picker`、`/reminders` |
 | 梦境编辑 | 每天一条，多行正文，800ms 自动保存；`lib/features/dream_editor/` |
 | 草稿保护 | 串行保存、切日/导航前 flush、后台尽力提交；读失败禁用编辑，保存失败保留文字并重试 |
 | 本地数据库 | Drift / SQLite，版本 1，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
 | 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
+| 周月年统计 | 记录天数、覆盖率、周末／平日比例、趋势及上期对比，按梦境所属日期实时派生；`lib/features/dream_statistics/`，见 [统计说明](STATISTICS_GUIDE.md) |
+| 底部导航 | 实色圆角「记录、统计、日历」；选日回记录，切页先保存，通知撤销旧导航意图；`lib/app/main_bottom_navigation.dart` |
 | 侧边菜单 | 左上角菜单，82% 屏宽抽屉，带铃铛的“通知设置”；`dream_editor/presentation/widgets/` |
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
 | 每日提醒 | 时间/开关、可延后授权、系统设置入口、测试通知、点击回当天；`lib/features/reminders/` |
@@ -52,6 +57,10 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-10，`a234951` 上的统计与底栏 | `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，172 项（新增 22 项）；覆盖日期口径、真实 SQLite、实时变更、错误重试、窄屏大字号、导航草稿保护及通知竞态 |
+| 2026-11-10，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` | 通过（Gradle 20.5 秒）；本轮未启动 Android 或人工验收 |
+| 2026-11-10，同上 | `flutter --no-version-check build ios --simulator --debug --no-pub` | 通过（Xcode 55.5 秒）；模拟器安装启动及用户验收结果分别记录 |
+| 2026-11-10，同上 | `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当前设备）及模拟器窗口检查 | 原 iPhone 18 Pro / iOS 27.2 保留数据升级启动，实际显示统计页面与三项底栏；已留给用户验收，未记为用户验收通过或真机验证 |
 | 2026-11-09，`66b6b0d` 上的文案集中管理 | `flutter pub get`、`flutter gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --no-pub --reporter expanded`（Flutter 实际带 `--no-version-check`，SDK 查新超时后使用） | 全部通过，150 项；覆盖英文系统下保持中文及 Controller/通知注入资源 |
 | 2026-11-09，同上文案集中管理 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端构建通过（Gradle 18.6 秒、Xcode 30.2 秒）；本轮未安装启动、人工操作或真机验收 |
 | 2026-11-09，`fa51ad5` 上的搜索改动 | `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` | 全部通过，147 项；新增 13 项覆盖真实 SQLite、异步结果、输入法确认、焦点与导航草稿保护 |
@@ -79,6 +88,9 @@ M1 原计划的逐项审计：
 - **尚未单独留档：从全新克隆在两个平台逐项重跑完整手工清单。** CI 已证明干净 checkout 的依赖、生成与 Dart 检查，但不替代此项。补齐后可将 M1 状态改为“验收归档完成”。
 
 ## 5. 已知边界与待办
+
+- 本轮先在 iPhone 18 Pro 模拟器验收统计与底栏。按用户明确要求，新增文字 ARB 同步在验收成功后进行；既有文案资源不回退，后续任务仍默认随功能维护 ARB。
+- 当前无好梦／噩梦记录字段，统计首版省略该板块；周末仅指周六／周日，不含法定调休。
 
 优先收尾：
 

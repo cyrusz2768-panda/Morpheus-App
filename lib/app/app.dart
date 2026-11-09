@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/app/router.dart';
+import 'package:morpheus/app/navigation_activity.dart';
 import 'package:morpheus/app/theme.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
@@ -60,6 +61,9 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
     // 冷启动时数据库可能还在加载，保留意图，等待下面的状态监听再次处理。
     if (ref.read(dreamEditorControllerProvider).isLoading) return;
     _handlingNotification = true;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    activity.cancel();
+    final navigationToken = activity.begin()!;
     _pendingNotification = false;
     try {
       bool saved;
@@ -93,6 +97,7 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
         );
       }
     } finally {
+      activity.end(navigationToken);
       _handlingNotification = false;
       if (_pendingNotification && mounted) _queueNotificationNavigation();
     }

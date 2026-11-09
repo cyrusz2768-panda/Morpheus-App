@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:morpheus/app/main_bottom_navigation.dart';
+import 'package:morpheus/app/navigation_activity.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
@@ -54,6 +56,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
   bool _canShowMenuHint(ReminderState reminder) {
     return !_menuHintShown &&
         !_isNavigating &&
+        !ref.read(navigationActivityProvider.notifier).isBusy &&
         !ref.read(dreamEditorControllerProvider).isLoading &&
         !reminder.isLoading &&
         !reminder.isBusy &&
@@ -93,6 +96,9 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
 
   Future<void> _openReminders() async {
     if (_isNavigating) return;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
@@ -102,7 +108,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         final saved = await ref
             .read(dreamEditorControllerProvider.notifier)
             .flushPendingSave();
-        if (!mounted) return;
+        if (!mounted || !activity.isCurrent(token)) return;
         if (!saved) {
           _showNavigationFailure();
           return;
@@ -110,12 +116,16 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
       } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
       await context.push<void>('/reminders');
     } finally {
+      activity.end(token);
       if (mounted) setState(() => _isNavigating = false);
     }
   }
 
   Future<void> _chooseDate() async {
     if (_isNavigating) return;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
@@ -125,7 +135,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         final saved = await ref
             .read(dreamEditorControllerProvider.notifier)
             .flushPendingSave();
-        if (!mounted) return;
+        if (!mounted || !activity.isCurrent(token)) return;
         if (!saved) {
           _showNavigationFailure();
           return;
@@ -133,17 +143,23 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         // await 期间输入法可能交付末尾文字，导航前同步确认一次。
       } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
       final chosen = await context.push<DateTime>(
-        '/calendar',
+        '/calendar-picker',
         extra: ref.read(dreamEditorControllerProvider).date,
       );
-      if (mounted && chosen != null) await _applyDate(chosen);
+      if (mounted && activity.isCurrent(token) && chosen != null) {
+        await _applyDate(chosen);
+      }
     } finally {
+      activity.end(token);
       if (mounted) setState(() => _isNavigating = false);
     }
   }
 
   Future<void> _openHistory() async {
     if (_isNavigating) return;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
@@ -152,7 +168,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         final saved = await ref
             .read(dreamEditorControllerProvider.notifier)
             .flushPendingSave();
-        if (!mounted) return;
+        if (!mounted || !activity.isCurrent(token)) return;
         if (!saved) {
           _showNavigationFailure();
           return;
@@ -162,25 +178,35 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
       } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
       ref.invalidate(dreamHistoryProvider);
       final date = await context.push<DateTime>('/history');
-      if (mounted && date != null) await _applyDate(date);
+      if (mounted && activity.isCurrent(token) && date != null) {
+        await _applyDate(date);
+      }
     } finally {
+      activity.end(token);
       if (mounted) setState(() => _isNavigating = false);
     }
   }
 
   Future<void> _backToToday() async {
     if (_isNavigating) return;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
       await _applyDate(DreamEntry.dateOnly(DateTime.now()));
     } finally {
+      activity.end(token);
       if (mounted) setState(() => _isNavigating = false);
     }
   }
 
   Future<void> _openSearch() async {
     if (_isNavigating) return;
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
     FocusScope.of(context).unfocus();
     setState(() => _isNavigating = true);
     try {
@@ -190,15 +216,18 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         final saved = await ref
             .read(dreamEditorControllerProvider.notifier)
             .flushPendingSave();
-        if (!mounted) return;
+        if (!mounted || !activity.isCurrent(token)) return;
         if (!saved) {
           _showNavigationFailure();
           return;
         }
       } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
       final date = await context.push<DateTime>('/search');
-      if (mounted && date != null) await _applyDate(date);
+      if (mounted && activity.isCurrent(token) && date != null) {
+        await _applyDate(date);
+      }
     } finally {
+      activity.end(token);
       if (mounted) setState(() => _isNavigating = false);
     }
   }
@@ -261,6 +290,9 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(navigationActivityProvider);
+    final navigationBusy =
+        _isNavigating || ref.read(navigationActivityProvider.notifier).isBusy;
     final editorState = ref.watch(dreamEditorControllerProvider);
     final reminderState = ref.watch(reminderControllerProvider);
     _queueMenuHint(reminderState);
@@ -285,8 +317,9 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
 
     return Scaffold(
       key: _scaffoldKey,
+      bottomNavigationBar: const MainBottomNavigation(selectedIndex: 0),
       drawer: EditorMenuDrawer(
-        canNavigate: !_isNavigating && !editorState.isLoading,
+        canNavigate: !navigationBusy && !editorState.isLoading,
         onOpenReminders: _openRemindersFromMenu,
         onClose: () => _scaffoldKey.currentState?.closeDrawer(),
       ),
@@ -299,7 +332,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
           key: const Key('open-menu-button'),
           tooltip: context.l10n.openMenu,
           icon: const Icon(Icons.menu),
-          onPressed: _isNavigating || editorState.isLoading ? null : _openMenu,
+          onPressed: navigationBusy || editorState.isLoading ? null : _openMenu,
         ),
         title: Text(context.l10n.appTitle),
         centerTitle: false,
@@ -308,7 +341,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
             key: const Key('open-search-button'),
             tooltip: context.l10n.searchDreams,
             icon: const Icon(Icons.search),
-            onPressed: _isNavigating || editorState.isLoading
+            onPressed: navigationBusy || editorState.isLoading
                 ? null
                 : _openSearch,
           ),
@@ -316,7 +349,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
             key: const Key('select-date-button'),
             tooltip: context.l10n.selectDate,
             icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: _isNavigating || editorState.isLoading
+            onPressed: navigationBusy || editorState.isLoading
                 ? null
                 : _chooseDate,
           ),
@@ -324,7 +357,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
             key: const Key('open-history-button'),
             tooltip: context.l10n.dreamHistory,
             icon: const Icon(Icons.history),
-            onPressed: _isNavigating || editorState.isLoading
+            onPressed: navigationBusy || editorState.isLoading
                 ? null
                 : _openHistory,
           ),
@@ -338,7 +371,7 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
               : _EditorBody(
                   state: editorState,
                   textController: _textController,
-                  onBackToToday: _isNavigating ? null : _backToToday,
+                  onBackToToday: navigationBusy ? null : _backToToday,
                   onChanged: ref
                       .read(dreamEditorControllerProvider.notifier)
                       .contentChanged,

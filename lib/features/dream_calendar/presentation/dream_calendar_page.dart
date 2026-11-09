@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:morpheus/app/main_bottom_navigation.dart';
 import 'package:morpheus/l10n/app_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/features/dream_calendar/application/recorded_dream_dates_provider.dart';
@@ -10,9 +11,16 @@ import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 ///
 /// 注入时钟后，今天、未来日期和跨年边界都可以在测试中固定下来。
 class DreamCalendarPage extends ConsumerStatefulWidget {
-  const DreamCalendarPage({super.key, required this.initialDate, this.now});
+  const DreamCalendarPage({
+    super.key,
+    required this.initialDate,
+    this.now,
+    this.onDateSelected,
+  });
 
   final DateTime initialDate;
+  // 顶级日历回调选日；旧全屏选日器仍通过 pop 返回日期。
+  final ValueChanged<DateTime>? onDateSelected;
   final DateTime Function()? now;
 
   @override
@@ -69,7 +77,15 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
       confirmText: context.l10n.confirm,
     );
     if (mounted && selected != null) {
-      Navigator.pop<DateTime>(context, selected);
+      _selectDate(selected);
+    }
+  }
+
+  void _selectDate(DateTime date) {
+    if (widget.onDateSelected case final callback?) {
+      callback(date);
+    } else {
+      Navigator.pop<DateTime>(context, date);
     }
   }
 
@@ -92,6 +108,9 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
     );
 
     return Scaffold(
+      bottomNavigationBar: widget.onDateSelected == null
+          ? null
+          : const MainBottomNavigation(selectedIndex: 2),
       appBar: AppBar(title: Text(context.l10n.dreamCalendar)),
       body: SafeArea(
         // 滚动容器应对小屏和大字号；宽屏限宽，避免七列日期相距太远。
@@ -316,7 +335,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
         button: true,
         enabled: enabled,
         selected: selected,
-        onTap: enabled ? () => Navigator.pop<DateTime>(context, date) : null,
+        onTap: enabled ? () => _selectDate(date) : null,
         excludeSemantics: true,
         child: Material(
           color: selected ? colors.primaryContainer : Colors.transparent,
@@ -326,9 +345,7 @@ class _DreamCalendarPageState extends ConsumerState<DreamCalendarPage> {
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: enabled
-                ? () => Navigator.pop<DateTime>(context, date)
-                : null,
+            onTap: enabled ? () => _selectDate(date) : null,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
