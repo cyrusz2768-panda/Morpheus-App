@@ -1,5 +1,13 @@
 # 开发日志
 
+## 2026-11-09
+
+- 在主线 `fa51ad5` 上新增双端共用的梦境正文搜索：首页 🔍 打开独立搜索页，自动聚焦并请求键盘，300ms 防抖，中文组词等待确认；结果按日期倒序，预览命中附近文字，点击后复用原编辑器。
+- 独立只读搜索接口通过 Drift 查询既有表；绑定参数并转义通配符，不新增依赖、不改 schemaVersion 1、不保存搜索历史或上传正文。保持导航前最新草稿保存、保存失败保留输入、空白删除、通知返回当天及旧异步结果隔离。
+- `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` 通过；完整 147 项，新增 13 项搜索测试。数据库测试使用独立临时文件/内存，不操作用户数据。
+- 新增 `docs/SEARCH_GUIDE.md`，同步项目状态、README 与 CHANGELOG。双端原生构建、iOS 模拟器及远程交付结果在完成后追加，不把自动测试视为用户人工验收。
+- 双端调试构建通过：`flutter build apk --debug --target-platform android-arm64 --no-pub`（27.5 秒）、`flutter build ios --simulator --debug --no-pub`（Xcode 99.5 秒）。Android 未启动或人工验收；iOS 使用原安装保留数据升级，不卸载、不清库。
+
 ## 2026-11-08
 
 - 复核本项目 48 轮历史对话、原始 M1 计划、代码及 GitHub 状态；区分 M1 基础本地记录、M2 历史/月历、M3 本地提醒与整个 Version 0.1。M1 核心开发和双平台模拟器基础验收已完成，独立的干净克隆双端完整手工复现记录待补。

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:morpheus/features/dream_calendar/presentation/dream_calendar_page.dart';
 import 'package:morpheus/features/dream_editor/presentation/dream_editor_page.dart';
 import 'package:morpheus/features/dream_history/presentation/dream_history_page.dart';
+import 'package:morpheus/features/dream_search/presentation/dream_search_page.dart';
 import 'package:morpheus/features/reminders/presentation/reminder_settings_page.dart';
 
 /// Central navigation configuration.
@@ -22,6 +23,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/history',
         name: 'dream-history',
         builder: (context, state) => const DreamHistoryPage(),
+      ),
+      GoRoute(
+        path: '/search',
+        name: 'dream-search',
+        builder: (context, state) => const DreamSearchPage(),
       ),
       GoRoute(
         path: '/calendar',

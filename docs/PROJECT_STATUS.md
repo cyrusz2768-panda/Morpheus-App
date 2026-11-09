@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-08。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-09。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -11,7 +11,7 @@
 | 阶段 | 范围 | 当前情况 |
 |---|---|---|
 | M1 | 工程、当天编辑、自动保存、SQLite 持久化、基础测试与双端运行 | 核心完成；Android 11-04、iOS 11-06 的基础验收已有用户确认；干净克隆双端完整手工复现记录待补 |
-| M2 | 日期选择、历史列表、月历回顾 | 已实现并有自动测试；最新月历/菜单已检查 iOS 画面，Android 最新版仅构建验证 |
+| M2 | 日期选择、历史列表、月历回顾、正文搜索 | 已实现并有自动测试；搜索新增 🔍 入口与独立页面，平台验证见下文 |
 | M3 | 用户设定时间的本地提醒 | 已实现，用户已确认此前双端提醒功能验收通过；真机长期后台等归后续验证 |
 | M4 | HealthKit / Health Connect 技术验证及醒来提醒 | 未开始，不承诺实时检测醒来 |
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
@@ -19,7 +19,7 @@
 ## 2. 代码与交付基线
 
 - 仓库：[cyrusz2768-panda/Morpheus-App](https://github.com/cyrusz2768-panda/Morpheus-App)。现有本地专案“夜行者/Morpheus”使用此仓库根目录，无需重新创建工程或仓库。
-- 最近功能基线：`a7c8c4e6293335497d875d5a08f9acaf1f679c6c`，包含月历、菜单、首次引导及 134 项测试。
+- 本轮搜索基于主线 `fa51ad5` 开发，新增 13 项测试，完整 147 项通过；最终搜索交付提交见 Git 日志。此前月历、菜单基线为 `a7c8c4e`，134 项是当时的历史测试数。
 - 历史 PR：[#2 工程与 SQLite](https://github.com/cyrusz2768-panda/Morpheus-App/pull/2)、[#3 日期与历史](https://github.com/cyrusz2768-panda/Morpheus-App/pull/3)、[#4 每日提醒](https://github.com/cyrusz2768-panda/Morpheus-App/pull/4) 已合并；[#5 月历与菜单](https://github.com/cyrusz2768-panda/Morpheus-App/pull/5) 创建后检查通过。
 - 本次交接整理以已验证的 #5 功能基线及交接文档为内容，直接整合到 `main` 交付。以后先核对实时 Git / GitHub 状态，不依据本文假定 PR 仍开放或提交号永远不变。
 - 原始分步提交保存在本地 `backup/*-reviewed-*` 分支，不是另一套工程；保留以便追溯，不必重复开发或重复上传。
@@ -29,11 +29,12 @@
 
 | 功能 | 实际行为与主要入口 |
 |---|---|
-| 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/calendar`、`/reminders` |
+| 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/calendar`、`/reminders` |
 | 梦境编辑 | 每天一条，多行正文，800ms 自动保存；`lib/features/dream_editor/` |
 | 草稿保护 | 串行保存、切日/导航前 flush、后台尽力提交；读失败禁用编辑，保存失败保留文字并重试 |
 | 本地数据库 | Drift / SQLite，版本 1，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
+| 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
 | 侧边菜单 | 左上角菜单，82% 屏宽抽屉，带铃铛的“通知设置”；`dream_editor/presentation/widgets/` |
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
@@ -49,6 +50,8 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-09，`fa51ad5` 上的搜索改动 | `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` | 全部通过，147 项；新增 13 项覆盖真实 SQLite、异步结果、输入法确认、焦点与导航草稿保护 |
+| 2026-11-09，同上 | `flutter build apk --debug --target-platform android-arm64 --no-pub`、`flutter build ios --simulator --debug --no-pub` | 双端构建通过（Android 27.5 秒、Xcode 99.5 秒）；Android 未启动或人工验收 |
 | 2026-11-03，M1 初版 | 依赖恢复、Drift 生成、格式、分析、28 项测试 | 通过，PR #2 CI 通过 |
 | 2026-11-04 | Android 基础记录、保存重开；随后日期/历史 57 项测试 | 用户确认基础功能与日期/历史验收通过 |
 | 2026-11-06 | iOS 基础记录与日期/历史；每日提醒 90 项测试、双端构建启动 | 用户确认基础功能及本轮提醒验收通过 |
@@ -57,7 +60,7 @@
 | 2026-11-08 | Android ARM64 调试 APK | 构建通过（98.2 秒）；本轮未启动 Android 模拟器人工验收 |
 | 2026-11-08，`a7c8c4e` | PR #5 的 GitHub Actions，运行 13 | `Flutter checks` 成功；干净 checkout 恢复依赖、生成并检查 Dart 代码 |
 
-以上是历史验证证据，后续代码变化需按影响范围重新检查。CI 不构建 Android / iOS，不能把绿色 CI 当作原生构建或真机验证。当前文档整理不修改运行代码，不重复运行模拟器或整套 Flutter 检查。
+以上证据仅适用于各自日期和代码基线，后续代码变化需按影响范围重新检查。CI 不构建 Android / iOS，不能把绿色 CI 当作原生构建或真机验证。
 
 M1 原计划的逐项审计：
 
@@ -81,11 +84,11 @@ M1 原计划的逐项审计：
 其他已知边界：
 
 - 系统强杀前尚未落盘的输入不能保证恢复；先看到“已保存”再重开才是持久化验收。
-- 历史列表当前无分页/搜索；跨午夜不会自动切换正在编辑的文档日期。这些是能力边界，不代表记录已丢失。
+- 历史列表与搜索当前无分页；正文搜索是本地连续文字匹配，不含拼音、分词或全文索引。跨午夜不会自动切换正在编辑的文档日期。这些是能力边界，不代表记录已丢失。
 - 未实现健康数据或手表接入、AI、账号、云同步、标签/心情、富文本。不要因为旧规划提及就自行立项。
 - “每次未设提醒都弹提示”是早期设想；最新实现按用户要求改成一次性菜单入口引导，系统授权说明在首次进入提醒设置时单独展示。
 
-下一轮先确认一个明确目标。可以优先补 M1 验收归档或安排 M5 真机/隐私收尾；健康数据按 M4 单独技术验证。搜索、AI 等此前用于举例的功能不属于已经获准开发的任务。
+用户已于 2026-11-09 授权并开展正文搜索开发，用户验收仅打开 iOS 模拟器；Android 做构建检查。后续继续按一个明确目标推进。可补 M1 验收归档或安排 M5 真机/隐私收尾；健康数据与 AI 仍需单独任务，不因旧规划自行开展。
 
 ## 6. 本机环境与已解决问题
 

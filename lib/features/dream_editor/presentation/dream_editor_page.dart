@@ -178,6 +178,30 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     }
   }
 
+  Future<void> _openSearch() async {
+    if (_isNavigating) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      // 搜索只查已落盘正文，必须先提交当前草稿。await 间隙输入法还可能
+      // 交付末尾文字，因此循环确认最新草稿；失败时留在原页保留输入。
+      do {
+        final saved = await ref
+            .read(dreamEditorControllerProvider.notifier)
+            .flushPendingSave();
+        if (!mounted) return;
+        if (!saved) {
+          _showNavigationFailure();
+          return;
+        }
+      } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
+      final date = await context.push<DateTime>('/search');
+      if (mounted && date != null) await _applyDate(date);
+    } finally {
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
   Future<void> _applyDate(DateTime date) async {
     final selected = await ref
         .read(dreamEditorControllerProvider.notifier)
@@ -279,6 +303,14 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         title: const Text('夜行者'),
         centerTitle: false,
         actions: [
+          IconButton(
+            key: const Key('open-search-button'),
+            tooltip: '搜索梦境',
+            icon: const Icon(Icons.search),
+            onPressed: _isNavigating || editorState.isLoading
+                ? null
+                : _openSearch,
+          ),
           IconButton(
             key: const Key('select-date-button'),
             tooltip: '选择日期',
