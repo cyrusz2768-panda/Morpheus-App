@@ -11,19 +11,19 @@
 | 阶段 | 范围 | 当前情况 |
 |---|---|---|
 | M1 | 工程、当天编辑、自动保存、SQLite 持久化、基础测试与双端运行 | 核心完成；Android 11-04、iOS 11-06 的基础验收已有用户确认；干净克隆双端完整手工复现记录待补 |
-| M2 | 日期选择、历史列表、月历回顾、正文搜索、基础周期统计 | 已实现并有自动测试；搜索新增 🔍 入口与独立页面，平台验证见下文 |
+| M2 | 日期选择、历史列表、月历回顾、正文搜索、基础周期统计 | 已实现并有自动测试；2026-11-10 用户确认统计与底栏 iOS 模拟器验收通过；搜索及其他平台证据见下文 |
 | M3 | 用户设定时间的本地提醒 | 已实现，用户已确认此前双端提醒功能验收通过；真机长期后台等归后续验证 |
 | M4 | HealthKit / Health Connect 技术验证及醒来提醒 | 未开始，不承诺实时检测醒来 |
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
 
 ## 2. 代码与交付基线
 
-- 2026-11-10 统计与底栏开发基于 `a234951`，起始工作区干净，已获取远程并确认无新增主线提交；统计与底栏功能已实现，用户人工验收及新增文字 ARB 同步待完成。当前轮检查记录见第 4 节。
-- 本轮本地功能提交 `5583ef1`；命令行主线 push 因缺少 GitHub HTTPS 登录失败，交付改用已授权连接器同步相同文件树并核验远程基线，未创建 PR。原本地提交保留供追溯。
+- 2026-11-10 用户确认周／月／年统计与底栏在 iPhone 18 Pro 模拟器验收通过。验收基线为 `a058b54`，功能开发基于 `a234951`；本次收尾在 `a058b54` 上补齐新增文字 ARB，完整 173 项测试通过。Android 人工验收与真机验证不因本次确认而标记完成。
+- 统计功能已通过已授权连接器同步主线 `a058b54`，远程父提交及文件树已核验，GitHub Actions [运行 42656692297](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/42656692297) 成功。命令行主线 push 因缺少 GitHub HTTPS 登录失败，本地原提交 `5583ef1` 等保留在 `codex/local-dream-statistics`。验收后文案收尾沿用连接器交付方式，不创建 PR。
 
 - 仓库：[cyrusz2768-panda/Morpheus-App](https://github.com/cyrusz2768-panda/Morpheus-App)。现有本地专案“夜行者/Morpheus”使用此仓库根目录，无需重新创建工程或仓库。
-- 本轮文案交付的命令行 push 遇到 GitHub HTTPS 网络超时，采用已授权连接器同步相同文件树；本地原提交保留在 `codex/local-l10n`，远程提交与 CI 需实时核验。
-- 本轮文案集中管理基于主线 `66b6b0d`（包含搜索交付 `a2bb0c1`），新增 3 项资源接线/注入测试，完整 150 项通过；文案资源仍仅有中文，完整翻译与语言切换未开发。此前搜索的 147 项、月历/菜单的 134 项为各自历史测试数。
+- 2026-11-09 首轮文案交付的命令行 push 遇到 GitHub HTTPS 网络超时，采用已授权连接器同步相同文件树；本地原提交保留在 `codex/local-l10n`。
+- 首轮文案集中管理基于主线 `66b6b0d`（包含搜索交付 `a2bb0c1`），当时完整 150 项通过；文案资源仍仅有中文，完整翻译与语言切换未开发。此前搜索的 147 项、月历/菜单的 134 项为各自历史测试数。
 - 历史 PR：[#2 工程与 SQLite](https://github.com/cyrusz2768-panda/Morpheus-App/pull/2)、[#3 日期与历史](https://github.com/cyrusz2768-panda/Morpheus-App/pull/3)、[#4 每日提醒](https://github.com/cyrusz2768-panda/Morpheus-App/pull/4) 已合并；[#5 月历与菜单](https://github.com/cyrusz2768-panda/Morpheus-App/pull/5) 创建后检查通过。
 - 本次交接整理以已验证的 #5 功能基线及交接文档为内容，直接整合到 `main` 交付。以后先核对实时 Git / GitHub 状态，不依据本文假定 PR 仍开放或提交号永远不变。
 - 原始分步提交保存在本地 `backup/*-reviewed-*` 分支，不是另一套工程；保留以便追溯，不必重复开发或重复上传。
@@ -46,7 +46,7 @@
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
 | 每日提醒 | 时间/开关、可延后授权、系统设置入口、测试通知、点击回当天；`lib/features/reminders/` |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 85 条中文 ARB，页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 116 条中文 ARB，含已验收统计与底栏；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
 存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白由编辑流程删除。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
@@ -57,10 +57,12 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-10，`a058b54` 上的验收后文案收尾 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，173 项；新增资源注入测试验证底栏、统计动态句式及趋势读屏接线。当前仍仅中文。本次无原生配置变更，未重复双端构建或操作模拟器，原生构建证据为下列功能基线 |
+| 2026-11-10，`a058b54` | 用户在本对话确认“验收成功，没有问题” | 周／月／年统计与底栏的 iPhone 18 Pro 模拟器验收通过；没有额外逐项操作记录，不扩展为 Android 或真机验收 |
 | 2026-11-10，`a234951` 上的统计与底栏 | `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，172 项（新增 22 项）；覆盖日期口径、真实 SQLite、实时变更、错误重试、窄屏大字号、导航草稿保护及通知竞态 |
 | 2026-11-10，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` | 通过（Gradle 20.5 秒）；本轮未启动 Android 或人工验收 |
 | 2026-11-10，同上 | `flutter --no-version-check build ios --simulator --debug --no-pub` | 通过（Xcode 55.5 秒）；模拟器安装启动及用户验收结果分别记录 |
-| 2026-11-10，同上 | `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当前设备）及模拟器窗口检查 | 原 iPhone 18 Pro / iOS 27.2 保留数据升级启动，实际显示统计页面与三项底栏；已留给用户验收，未记为用户验收通过或真机验证 |
+| 2026-11-10，同上 | `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当前设备）及模拟器窗口检查 | 原 iPhone 18 Pro / iOS 27.2 保留数据升级启动，实际显示统计页面与三项底栏；随后用户验收确认见上行，不代表真机验证 |
 | 2026-11-09，`66b6b0d` 上的文案集中管理 | `flutter pub get`、`flutter gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --no-pub --reporter expanded`（Flutter 实际带 `--no-version-check`，SDK 查新超时后使用） | 全部通过，150 项；覆盖英文系统下保持中文及 Controller/通知注入资源 |
 | 2026-11-09，同上文案集中管理 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端构建通过（Gradle 18.6 秒、Xcode 30.2 秒）；本轮未安装启动、人工操作或真机验收 |
 | 2026-11-09，`fa51ad5` 上的搜索改动 | `dart format --output=none --set-exit-if-changed lib test`、`flutter analyze --no-pub`、`flutter test --reporter expanded` | 全部通过，147 项；新增 13 项覆盖真实 SQLite、异步结果、输入法确认、焦点与导航草稿保护 |
@@ -89,7 +91,7 @@ M1 原计划的逐项审计：
 
 ## 5. 已知边界与待办
 
-- 本轮先在 iPhone 18 Pro 模拟器验收统计与底栏。按用户明确要求，新增文字 ARB 同步在验收成功后进行；既有文案资源不回退，后续任务仍默认随功能维护 ARB。
+- 统计与底栏已由用户在 iPhone 18 Pro 模拟器验收通过，按约定补齐 31 条新增文案及资源接线；本轮延后同步的临时例外已收尾，后续仍默认随功能维护 ARB。
 - 当前无好梦／噩梦记录字段，统计首版省略该板块；周末仅指周六／周日，不含法定调休。
 
 优先收尾：

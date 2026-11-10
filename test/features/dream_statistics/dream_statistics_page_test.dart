@@ -10,13 +10,18 @@ import 'package:morpheus/features/dream_statistics/data/statistics_repository.da
 import 'package:morpheus/features/dream_statistics/domain/dream_statistics.dart';
 import 'package:morpheus/features/dream_statistics/presentation/dream_statistics_page.dart';
 import 'package:morpheus/l10n/app_text.dart';
+import 'package:morpheus/l10n/generated/app_localizations_zh.dart';
 
 void main() {
   late _Repository repository;
   setUp(() => repository = _Repository());
   tearDown(() => repository.changes.close());
 
-  Future<void> show(WidgetTester tester, {double scale = 1}) async {
+  Future<void> show(
+    WidgetTester tester, {
+    double scale = 1,
+    AppLocalizations? resources,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -27,7 +32,10 @@ void main() {
           theme: buildAppTheme(),
           locale: morpheusLocale,
           supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: [
+            if (resources != null) _ResourcesDelegate(resources),
+            ...AppLocalizations.localizationsDelegates,
+          ],
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,
@@ -57,6 +65,26 @@ void main() {
     expect(find.text('0 天 · —'), findsNWidgets(2));
     expect(find.textContaining('NaN'), findsNothing);
     expect(find.textContaining('噩梦'), findsNothing);
+  });
+
+  testWidgets('统计动态文案、读屏标签与底栏均从注入资源读取', (tester) async {
+    repository.dates = {'2026-11-09'};
+    await show(tester, resources: _StatisticsResources());
+    expect(find.text('test statistics'), findsOneWidget);
+    expect(find.text('test record'), findsOneWidget);
+    expect(find.text('test summary'), findsOneWidget);
+    expect(find.text('test calendar'), findsOneWidget);
+    expect(find.text('test days 1'), findsOneWidget);
+    expect(find.text('test comparison more 1'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label ==
+                'test bucket 2026.11.9 / 2026.11.9 / false / 1',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('月年切换和翻期正确，未来周期禁用，返回本期', (tester) async {
@@ -144,6 +172,42 @@ void main() {
     expect(find.text('1 天 · 13%'), findsOneWidget);
     expect(find.text('7 天 · 87%'), findsOneWidget);
   });
+}
+
+/// 注入不同句式验证接线，而不是只检查中文文字恰好和页面硬编码相同。
+/// 这只用于测试，不声明应用已支持英文或运行时语言切换。
+class _StatisticsResources extends AppLocalizationsZh {
+  @override
+  String get statisticsTitle => 'test statistics';
+  @override
+  String get navRecord => 'test record';
+  @override
+  String get navStatistics => 'test summary';
+  @override
+  String get navCalendar => 'test calendar';
+  @override
+  String statisticsDayCount(int days) => 'test days $days';
+  @override
+  String statisticsComparison(String direction, int days) =>
+      'test comparison $direction $days';
+  @override
+  String statisticsBucketSemantics(
+    String start,
+    String end,
+    String isFuture,
+    int days,
+  ) => 'test bucket $start / $end / $isFuture / $days';
+}
+
+class _ResourcesDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _ResourcesDelegate(this.resources);
+  final AppLocalizations resources;
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'zh';
+  @override
+  Future<AppLocalizations> load(Locale locale) async => resources;
+  @override
+  bool shouldReload(_ResourcesDelegate old) => old.resources != resources;
 }
 
 class _Repository implements IStatisticsRepository {

@@ -79,24 +79,24 @@ class MainBottomNavigation extends ConsumerWidget {
             onDestinationSelected: busy
                 ? null
                 : (index) => _select(context, ref, index),
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                key: Key('nav-record'),
-                icon: Icon(Icons.edit_note_outlined),
-                selectedIcon: Icon(Icons.edit_note),
-                label: '记录',
+                key: const Key('nav-record'),
+                icon: const Icon(Icons.edit_note_outlined),
+                selectedIcon: const Icon(Icons.edit_note),
+                label: context.l10n.navRecord,
               ),
               NavigationDestination(
-                key: Key('nav-statistics'),
-                icon: Icon(Icons.bar_chart_outlined),
-                selectedIcon: Icon(Icons.bar_chart),
-                label: '统计',
+                key: const Key('nav-statistics'),
+                icon: const Icon(Icons.bar_chart_outlined),
+                selectedIcon: const Icon(Icons.bar_chart),
+                label: context.l10n.navStatistics,
               ),
               NavigationDestination(
-                key: Key('nav-calendar'),
-                icon: Icon(Icons.calendar_month_outlined),
-                selectedIcon: Icon(Icons.calendar_month),
-                label: '日历',
+                key: const Key('nav-calendar'),
+                icon: const Icon(Icons.calendar_month_outlined),
+                selectedIcon: const Icon(Icons.calendar_month),
+                label: context.l10n.navCalendar,
               ),
             ],
           ),

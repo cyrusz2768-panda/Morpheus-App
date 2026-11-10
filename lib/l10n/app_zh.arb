@@ -321,7 +321,7 @@
   },
   "calendarMonth": "{year}年{month}月",
   "@calendarMonth": {
-    "description": "月历月份标题",
+    "description": "月历与月统计的月份标题",
     "placeholders": {
       "year": {
         "type": "int"
@@ -400,6 +400,236 @@
     "placeholders": {
       "details": {
         "type": "String"
+      }
+    }
+  },
+  "navRecord": "记录",
+  "@navRecord": {
+    "description": "底部导航：梦境编辑页"
+  },
+  "navStatistics": "统计",
+  "@navStatistics": {
+    "description": "底部导航：周月年统计页"
+  },
+  "navCalendar": "日历",
+  "@navCalendar": {
+    "description": "底部导航：梦境月历页"
+  },
+  "statisticsTitle": "梦境统计",
+  "@statisticsTitle": {
+    "description": "周月年统计页标题"
+  },
+  "statisticsPeriodLabel": "{period, select, week{周} month{月} other{年}}",
+  "@statisticsPeriodLabel": {
+    "description": "统计周期切换的短标签；period 为 week/month/year",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsBackToCurrent": "{period, select, week{回到本周} month{回到本月} other{回到本年}}",
+  "@statisticsBackToCurrent": {
+    "description": "统计页返回当前周期按钮；period 为 week/month/year",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsPreviousPeriod": "上一周期",
+  "@statisticsPreviousPeriod": {
+    "description": "统计页前一周、月或年的工具提示"
+  },
+  "statisticsNextPeriod": "下一周期",
+  "@statisticsNextPeriod": {
+    "description": "统计页后一周、月或年的工具提示"
+  },
+  "statisticsDate": "{year}.{month}.{day}",
+  "@statisticsDate": {
+    "description": "统计页范围与趋势读屏日期；仅格式化展示，不改变梦境所属日期",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsWeekRange": "{start} — {end}",
+  "@statisticsWeekRange": {
+    "description": "周统计标题的完整起止日期范围；start/end 已按 statisticsDate 格式化",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsYear": "{year}年",
+  "@statisticsYear": {
+    "description": "年统计标题",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsLoadFailed": "统计读取失败，请重试。",
+  "@statisticsLoadFailed": {
+    "description": "统计查询或实时订阅失败；不能显示为零记录"
+  },
+  "statisticsDateNote": "按梦境所属日期统计，每天最多计一次。补记、修改与删除会自动更新。",
+  "@statisticsDateNote": {
+    "description": "统计页底部解释日期归属与更新规则"
+  },
+  "statisticsComparison": "{direction, select, more{较上期多 {days} 天} less{较上期少 {days} 天} other{与上期持平}}",
+  "@statisticsComparison": {
+    "description": "完整上期对比句子；direction 为 more/less/equal，days 为差值绝对值",
+    "placeholders": {
+      "direction": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsRecordedDaysLabel": "记录天数",
+  "@statisticsRecordedDaysLabel": {
+    "description": "统计摘要卡的记录天数标题"
+  },
+  "statisticsDayCount": "{days} 天",
+  "@statisticsDayCount": {
+    "description": "统计摘要卡记录天数及单位",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsCoverageSummary": "记录覆盖率 {percent}% · 已经过 {days} 天",
+  "@statisticsCoverageSummary": {
+    "description": "统计摘要的覆盖率与截至今天的天数；percent 为不含百分号的整数文本",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsComparisonNote": "当前周期只计截至今天的日期，并与上期相同天数比较；上期较短时取全期。历史周期比较完整周期。",
+  "@statisticsComparisonNote": {
+    "description": "解释当前周期及历史周期的上期比较口径"
+  },
+  "statisticsTrendTitle": "记录趋势",
+  "@statisticsTrendTitle": {
+    "description": "趋势图卡标题"
+  },
+  "statisticsTrendDescription": "{period, select, week{每天是否留下梦境记录} month{按周汇总记录天数，首尾按本月裁切} other{每月的记录天数}}",
+  "@statisticsTrendDescription": {
+    "description": "趋势图分桶说明；period 为 week/month/year",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsEmpty": "这个周期还没有记录。记下一个梦，回顾就从这里开始。",
+  "@statisticsEmpty": {
+    "description": "当前浏览周期没有有效记录时的提示"
+  },
+  "statisticsDayTypeTitle": "周末 / 平日",
+  "@statisticsDayTypeTitle": {
+    "description": "双休日与平日占比卡标题"
+  },
+  "statisticsShareDescription": "占本周期记录天数的比例",
+  "@statisticsShareDescription": {
+    "description": "说明占比以有记录天数为分母"
+  },
+  "statisticsWeekend": "双休日",
+  "@statisticsWeekend": {
+    "description": "占比行标签：周六及周日"
+  },
+  "statisticsWeekday": "平日",
+  "@statisticsWeekday": {
+    "description": "占比行标签：周一至周五"
+  },
+  "statisticsDayTypeNote": "双休日为周六、周日；平日为周一至周五，不按法定节假日或调休调整。",
+  "@statisticsDayTypeNote": {
+    "description": "解释统计中双休日和平日的定义"
+  },
+  "statisticsBucketSemantics": "{start}至{end}，{isFuture, select, true{尚未开始} other{记录{days}天}}",
+  "@statisticsBucketSemantics": {
+    "description": "趋势柱完整读屏标签；未来分桶不当作零记录，isFuture 为 true/false；start/end 已格式化",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "isFuture": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsBucketCount": "{isFuture, select, true{—} other{{days}}}",
+  "@statisticsBucketCount": {
+    "description": "趋势柱上方数值，未来分桶显示破折号；isFuture 为 true/false",
+    "placeholders": {
+      "isFuture": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsDayRange": "{start}–{end}",
+  "@statisticsDayRange": {
+    "description": "月趋势图横轴的本月日数范围，首尾周可不足七天",
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsMonthTick": "{month}月",
+  "@statisticsMonthTick": {
+    "description": "年趋势图横轴的月份短标签",
+    "placeholders": {
+      "month": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsShareSummary": "{days} 天 · {hasRecords, select, true{{percent}%} other{—}}",
+  "@statisticsShareSummary": {
+    "description": "双休日或平日的完整天数与占比；无记录时占比未知，hasRecords 为 true/false；percent 为互补取整百分比",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hasRecords": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
       }
     }
   }

@@ -116,7 +116,7 @@ UI / 界面层
 
 底栏日历与右上角快捷选日共用带记录圆点的月历。实现逻辑和验收步骤见 [梦境月历说明](docs/CALENDAR_GUIDE.md)；沿用原数据库和编辑器，没有新增依赖。
 
-统计口径、底栏导航和验收步骤见 [统计功能说明](docs/STATISTICS_GUIDE.md)。好梦／噩梦记录尚未开发，首版不展示该分类比例。
+统计口径、底栏导航和验收步骤见 [统计功能说明](docs/STATISTICS_GUIDE.md)。2026-11-10 用户已确认 iOS 模拟器统计与底栏验收通过，Android 本轮为构建检查。好梦／噩梦记录尚未开发，首版不展示该分类比例。
 
 每日提醒的语言、依赖、数据流和两端验收步骤见 [每日提醒说明](docs/REMINDERS_GUIDE.md)。提醒使用 `flutter_local_notifications`、`flutter_timezone` 和 `timezone`；设置保存于本地私有 JSON。Android 采用普通通知调度，节电时可能延迟。
 
@@ -133,7 +133,7 @@ Version 0.1 暂不包含：
 
 ---
 
-既有界面文案、日期句式、读屏提示与通知文字已集中到 `lib/l10n/app_zh.arb`，Android / iOS 共用。现在仍仅交付中文，完整翻译与语言切换后续实施；新增功能须同时维护资源，生成和维护步骤见 [界面文案指南](docs/LOCALIZATION_GUIDE.md)。本轮统计与底栏按用户要求先进行功能验收，新增文字的 ARB 同步留到验收通过后。
+界面文案、日期句式、读屏提示与通知文字已集中到 `lib/l10n/app_zh.arb`，Android / iOS 共用，统计与底栏在用户验收通过后也已补齐资源。现在仍仅交付中文，完整翻译与语言切换后续实施；新增功能须同时维护资源，生成和维护步骤见 [界面文案指南](docs/LOCALIZATION_GUIDE.md)。
 
 ## 快速开始
 

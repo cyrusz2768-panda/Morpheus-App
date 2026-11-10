@@ -4,11 +4,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:morpheus/app/main_bottom_navigation.dart';
+import 'package:morpheus/l10n/app_text.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_statistics/application/statistics_provider.dart';
 import 'package:morpheus/features/dream_statistics/domain/dream_statistics.dart';
 
-/// 本轮按用户要求先验收中文界面，新增文字在验收通过后统一接入 ARB。
+/// 页面通过 context.l10n 读取文案；日期、整句数量提示与读屏标签均由资源
+/// 组合占位符，业务层只提供数据，避免页面拼接中文影响未来的语序调整。
 /// 页面只持有浏览的周期；数据库监听、聚合与编辑器保存各有独立职责。
 class DreamStatisticsPage extends ConsumerStatefulWidget {
   const DreamStatisticsPage({super.key, this.now});
@@ -80,14 +82,20 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
       window.end.day - 1,
     );
     final title = switch (_period) {
-      StatisticsPeriod.week => '${_date(window.start)} — ${_date(last)}',
-      StatisticsPeriod.month => '${window.start.year}年${window.start.month}月',
-      StatisticsPeriod.year => '${window.start.year}年',
+      StatisticsPeriod.week => context.l10n.statisticsWeekRange(
+        _date(context.l10n, window.start),
+        _date(context.l10n, last),
+      ),
+      StatisticsPeriod.month => context.l10n.calendarMonth(
+        window.start.year,
+        window.start.month,
+      ),
+      StatisticsPeriod.year => context.l10n.statisticsYear(window.start.year),
     };
 
     return Scaffold(
       bottomNavigationBar: const MainBottomNavigation(selectedIndex: 1),
-      appBar: AppBar(title: const Text('梦境统计')),
+      appBar: AppBar(title: Text(context.l10n.statisticsTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -99,18 +107,20 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                 children: [
                   SegmentedButton<StatisticsPeriod>(
                     key: const Key('statistics-period-control'),
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: StatisticsPeriod.week,
-                        label: Text('周'),
+                        label: Text(context.l10n.statisticsPeriodLabel('week')),
                       ),
                       ButtonSegment(
                         value: StatisticsPeriod.month,
-                        label: Text('月'),
+                        label: Text(
+                          context.l10n.statisticsPeriodLabel('month'),
+                        ),
                       ),
                       ButtonSegment(
                         value: StatisticsPeriod.year,
-                        label: Text('年'),
+                        label: Text(context.l10n.statisticsPeriodLabel('year')),
                       ),
                     ],
                     selected: {_period},
@@ -125,7 +135,7 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                     children: [
                       IconButton(
                         key: const Key('statistics-previous'),
-                        tooltip: '上一周期',
+                        tooltip: context.l10n.statisticsPreviousPeriod,
                         onPressed: window.start.isAfter(DateTime(1900, 1, 1))
                             ? () => _move(-1)
                             : null,
@@ -141,7 +151,7 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                       ),
                       IconButton(
                         key: const Key('statistics-next'),
-                        tooltip: '下一周期',
+                        tooltip: context.l10n.statisticsNextPeriod,
                         onPressed: window.start.isBefore(current.start)
                             ? () => _move(1)
                             : null,
@@ -157,11 +167,9 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                           ? null
                           : () => setState(() => _anchor = _today),
                       icon: const Icon(Icons.today_outlined, size: 18),
-                      label: Text(switch (_period) {
-                        StatisticsPeriod.week => '回到本周',
-                        StatisticsPeriod.month => '回到本月',
-                        StatisticsPeriod.year => '回到本年',
-                      }),
+                      label: Text(
+                        context.l10n.statisticsBackToCurrent(_period.name),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -178,11 +186,11 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                         children: [
                           Icon(Icons.cloud_off_outlined, color: colors.error),
                           const SizedBox(height: 12),
-                          const Text('统计读取失败，请重试。'),
+                          Text(context.l10n.statisticsLoadFailed),
                           TextButton(
                             key: const Key('statistics-retry'),
                             onPressed: () => ref.invalidate(datesProvider),
-                            child: const Text('重试'),
+                            child: Text(context.l10n.retry),
                           ),
                         ],
                       ),
@@ -197,7 +205,7 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '按梦境所属日期统计，每天最多计一次。补记、修改与删除会自动更新。',
+                    context.l10n.statisticsDateNote,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
@@ -221,9 +229,14 @@ class _StatisticsContent extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final difference = stats.recordedDays - stats.previousRecordedDays;
-    final comparison = difference == 0
-        ? '与上期持平'
-        : '较上期${difference > 0 ? '多' : '少'} ${difference.abs()} 天';
+    final comparison = context.l10n.statisticsComparison(
+      difference > 0
+          ? 'more'
+          : difference < 0
+          ? 'less'
+          : 'equal',
+      difference.abs(),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -232,10 +245,10 @@ class _StatisticsContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('记录天数'),
+              Text(context.l10n.statisticsRecordedDaysLabel),
               const SizedBox(height: 6),
               Text(
-                '${stats.recordedDays} 天',
+                context.l10n.statisticsDayCount(stats.recordedDays),
                 key: const Key('statistics-recorded-days'),
                 style: theme.textTheme.displaySmall?.copyWith(
                   color: colors.primary,
@@ -246,7 +259,10 @@ class _StatisticsContent extends StatelessWidget {
               Text(comparison, key: const Key('statistics-comparison')),
               const SizedBox(height: 14),
               Text(
-                '记录覆盖率 ${_percent(stats.coverage)} · 已经过 ${stats.elapsedDays} 天',
+                context.l10n.statisticsCoverageSummary(
+                  (stats.coverage * 100).toStringAsFixed(0),
+                  stats.elapsedDays,
+                ),
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
@@ -256,7 +272,7 @@ class _StatisticsContent extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '当前周期只计截至今天的日期，并与上期相同天数比较；上期较短时取全期。历史周期比较完整周期。',
+                context.l10n.statisticsComparisonNote,
                 style: theme.textTheme.bodySmall,
               ),
             ],
@@ -267,20 +283,24 @@ class _StatisticsContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('记录趋势', style: theme.textTheme.titleMedium),
+              Text(
+                context.l10n.statisticsTrendTitle,
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
-              Text(switch (stats.window.period) {
-                StatisticsPeriod.week => '每天是否留下梦境记录',
-                StatisticsPeriod.month => '按周汇总记录天数，首尾按本月裁切',
-                StatisticsPeriod.year => '每月的记录天数',
-              }, style: theme.textTheme.bodySmall),
+              Text(
+                context.l10n.statisticsTrendDescription(
+                  stats.window.period.name,
+                ),
+                style: theme.textTheme.bodySmall,
+              ),
               const SizedBox(height: 20),
               _TrendChart(stats: stats),
               if (stats.recordedDays == 0) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  '这个周期还没有记录。记下一个梦，回顾就从这里开始。',
-                  key: Key('statistics-empty'),
+                Text(
+                  context.l10n.statisticsEmpty,
+                  key: const Key('statistics-empty'),
                 ),
               ],
             ],
@@ -291,12 +311,18 @@ class _StatisticsContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('周末 / 平日', style: theme.textTheme.titleMedium),
+              Text(
+                context.l10n.statisticsDayTypeTitle,
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
-              Text('占本周期记录天数的比例', style: theme.textTheme.bodySmall),
+              Text(
+                context.l10n.statisticsShareDescription,
+                style: theme.textTheme.bodySmall,
+              ),
               const SizedBox(height: 18),
               _ShareRow(
-                label: '双休日',
+                label: context.l10n.statisticsWeekend,
                 days: stats.weekendDays,
                 ratio: stats.recordedDays == 0 ? null : stats.weekendShare,
                 displayPercent: (100 * stats.weekendShare).round(),
@@ -304,7 +330,7 @@ class _StatisticsContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _ShareRow(
-                label: '平日',
+                label: context.l10n.statisticsWeekday,
                 days: stats.weekdayDays,
                 ratio: stats.recordedDays == 0 ? null : 1 - stats.weekendShare,
                 // 显示取互补整数，避免两个比例分别舍入后合计101%。
@@ -313,7 +339,7 @@ class _StatisticsContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                '双休日为周六、周日；平日为周一至周五，不按法定节假日或调休调整。',
+                context.l10n.statisticsDayTypeNote,
                 style: theme.textTheme.bodySmall,
               ),
             ],
@@ -354,15 +380,27 @@ class _TrendChart extends StatelessWidget {
                 for (final bucket in stats.buckets)
                   Expanded(
                     child: Semantics(
-                      label:
-                          '${_date(bucket.start)}至${_date(DateTime(bucket.end.year, bucket.end.month, bucket.end.day - 1))}，${bucket.elapsedDays == 0 ? '尚未开始' : '记录${bucket.recordedDays}天'}',
+                      label: context.l10n.statisticsBucketSemantics(
+                        _date(context.l10n, bucket.start),
+                        _date(
+                          context.l10n,
+                          DateTime(
+                            bucket.end.year,
+                            bucket.end.month,
+                            bucket.end.day - 1,
+                          ),
+                        ),
+                        (bucket.elapsedDays == 0).toString(),
+                        bucket.recordedDays,
+                      ),
                       excludeSemantics: true,
                       child: Column(
                         children: [
                           Text(
-                            bucket.elapsedDays == 0
-                                ? '—'
-                                : '${bucket.recordedDays}',
+                            context.l10n.statisticsBucketCount(
+                              (bucket.elapsedDays == 0).toString(),
+                              bucket.recordedDays,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 8),
@@ -388,18 +426,22 @@ class _TrendChart extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           Text(switch (stats.window.period) {
-                            StatisticsPeriod.week => [
-                              '一',
-                              '二',
-                              '三',
-                              '四',
-                              '五',
-                              '六',
-                              '日',
-                            ][bucket.start.weekday - 1],
+                            StatisticsPeriod.week => context.l10n.weekdayShort(
+                              bucket.start.weekday.toString(),
+                            ),
                             StatisticsPeriod.month =>
-                              '${bucket.start.day}–${DateTime(bucket.end.year, bucket.end.month, bucket.end.day - 1).day}',
-                            StatisticsPeriod.year => '${bucket.start.month}月',
+                              context.l10n.statisticsDayRange(
+                                bucket.start.day,
+                                DateTime(
+                                  bucket.end.year,
+                                  bucket.end.month,
+                                  bucket.end.day - 1,
+                                ).day,
+                              ),
+                            StatisticsPeriod.year =>
+                              context.l10n.statisticsMonthTick(
+                                bucket.start.month,
+                              ),
                           }, style: Theme.of(context).textTheme.bodySmall),
                         ],
                       ),
@@ -434,7 +476,13 @@ class _ShareRow extends StatelessWidget {
       Row(
         children: [
           Expanded(child: Text(label)),
-          Text('$days 天 · ${ratio == null ? '—' : '$displayPercent%'}'),
+          Text(
+            context.l10n.statisticsShareSummary(
+              days,
+              (ratio != null).toString(),
+              displayPercent,
+            ),
+          ),
         ],
       ),
       const SizedBox(height: 8),
@@ -463,5 +511,5 @@ class _Panel extends StatelessWidget {
   );
 }
 
-String _date(DateTime date) => '${date.year}.${date.month}.${date.day}';
-String _percent(double value) => '${(value * 100).toStringAsFixed(0)}%';
+String _date(AppLocalizations l10n, DateTime date) =>
+    l10n.statisticsDate(date.year, date.month, date.day);
