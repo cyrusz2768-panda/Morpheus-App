@@ -8,6 +8,13 @@ import 'package:morpheus/features/reminders/domain/reminder_settings.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+const weeklyDefaults = {
+  'weeklyEnabled': false,
+  'weeklyWeekday': 7,
+  'weeklyHour': 21,
+  'weeklyMinute': 0,
+};
+
 void main() {
   setUpAll(tz_data.initializeTimeZones);
 
@@ -59,12 +66,20 @@ void main() {
 
     final migrated = await store.read();
 
-    expect(migrated.toJson(), {...legacy, 'menuHintSeen': false});
+    expect(migrated.toJson(), {
+      ...legacy,
+      'menuHintSeen': false,
+      ...weeklyDefaults,
+    });
     // 读取旧版只补内存默认值，不因一次升级擅自重写已有配置文件。
     expect(await file.readAsString(), original);
     await store.write(migrated.copyWith(menuHintSeen: true));
     final reopened = FileReminderSettingsStore(resolveFile: () async => file);
-    expect((await reopened.read()).toJson(), {...legacy, 'menuHintSeen': true});
+    expect((await reopened.read()).toJson(), {
+      ...legacy,
+      'menuHintSeen': true,
+      ...weeklyDefaults,
+    });
   });
 
   test('菜单教学写入临时文件失败时，原文件与未读状态仍可恢复', () async {
@@ -177,5 +192,106 @@ void main() {
       nextReminderTime(now, 8, 0).difference(now),
       const Duration(hours: 25),
     );
+  });
+
+  test('回顾设置在真实文件重开后保留，关闭不会改每日提醒', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'morpheus-weekly-test-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/reminders.json');
+    final store = FileReminderSettingsStore(resolveFile: () async => file);
+    await store.write(
+      ReminderSettings(
+        enabled: true,
+        hour: 6,
+        weeklyEnabled: true,
+        weeklyWeekday: 3,
+        weeklyHour: 20,
+        weeklyMinute: 45,
+      ),
+    );
+    final reopened = FileReminderSettingsStore(resolveFile: () async => file);
+    final settings = await reopened.read();
+    expect(settings.weeklyEnabled, isTrue);
+    expect(settings.weeklyWeekday, 3);
+    expect(settings.weeklyTimeLabel, '20:45');
+    await reopened.write(settings.copyWith(weeklyEnabled: false));
+    expect((await store.read()).weeklyEnabled, isFalse);
+    expect((await store.read()).enabled, isTrue);
+    expect((await store.read()).hour, 6);
+  });
+
+  test('回顾字段缺失兼容旧配置，显式损坏或越界拒绝', () {
+    final legacy = {
+      'enabled': true,
+      'hour': 6,
+      'minute': 15,
+      'noticeSeen': true,
+    };
+    final migrated = ReminderSettings.fromJson(legacy);
+    expect(migrated.weeklyEnabled, isFalse);
+    expect(migrated.weeklyWeekday, 7);
+    expect(migrated.weeklyTimeLabel, '21:00');
+    expect(migrated.timeLabel, '06:15');
+    for (final field in weeklyDefaults.keys) {
+      for (final bad in [null, 'invalid']) {
+        expect(
+          () => ReminderSettings.fromJson({...legacy, field: bad}),
+          throwsFormatException,
+        );
+      }
+    }
+    for (final bad in [
+      {'weeklyWeekday': 0},
+      {'weeklyWeekday': 8},
+      {'weeklyHour': 24},
+      {'weeklyMinute': 60},
+    ]) {
+      expect(
+        () => ReminderSettings.fromJson({...legacy, ...bad}),
+        throwsRangeError,
+      );
+    }
+  });
+
+  test('周提醒当天未到、刚好已到、跨年按本地日历星期计算', () {
+    final zone = tz.getLocation('Asia/Shanghai');
+    expect(
+      nextWeeklyReminderTime(tz.TZDateTime(zone, 2026, 11, 8, 20), 7, 21, 0),
+      tz.TZDateTime(zone, 2026, 11, 8, 21),
+    );
+    expect(
+      nextWeeklyReminderTime(tz.TZDateTime(zone, 2026, 11, 8, 21), 7, 21, 0),
+      tz.TZDateTime(zone, 2026, 11, 15, 21),
+    );
+    expect(
+      nextWeeklyReminderTime(tz.TZDateTime(zone, 2026, 12, 31, 23), 7, 21, 0),
+      tz.TZDateTime(zone, 2027, 1, 3, 21),
+    );
+  });
+
+  test('周提醒跳过不存在的本地时间，重复模板仍保留原时分', () {
+    final zone = tz.getLocation('America/New_York');
+    final next = nextWeeklyReminderTime(
+      tz.TZDateTime(zone, 2026, 3, 7, 12),
+      7,
+      2,
+      30,
+    );
+    expect(next, tz.TZDateTime(zone, 2026, 3, 15, 2, 30));
+  });
+
+  test('周提醒跨夏令时仍保持同一星期和时间', () {
+    final zone = tz.getLocation('America/New_York');
+    final spring = tz.TZDateTime(zone, 2026, 3, 1, 21);
+    final autumn = tz.TZDateTime(zone, 2026, 10, 25, 21);
+    final nextSpring = nextWeeklyReminderTime(spring, 7, 21, 0);
+    final nextAutumn = nextWeeklyReminderTime(autumn, 7, 21, 0);
+    expect(nextSpring.weekday, 7);
+    expect(nextSpring.hour, 21);
+    expect(nextSpring.difference(spring).inHours, 167);
+    expect(nextAutumn.hour, 21);
+    expect(nextAutumn.difference(autumn).inHours, 169);
   });
 }

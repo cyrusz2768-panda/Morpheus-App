@@ -1,3 +1,4 @@
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -155,7 +156,7 @@ void main() {
           .selectDate(old);
       await tester.pumpAndSettle();
       await tab(tester, name);
-      notifications.onTap!();
+      notifications.onTap!(ReminderDestination.today);
       await tester.pumpAndSettle();
       expect(text(tester), '当天测试梦境');
       expect(
@@ -178,7 +179,7 @@ void main() {
         .widget<NavigationBar>(find.byType(NavigationBar))
         .onDestinationSelected!(1);
     await tester.pump();
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pump();
     expect(
       tester
@@ -195,6 +196,122 @@ void main() {
           .widget<MainBottomNavigation>(find.byType(MainBottomNavigation))
           .selectedIndex,
       0,
+    );
+  });
+
+  String currentWeekRange() {
+    final window = StatisticsWindow(StatisticsPeriod.week, DateTime.now());
+    final end = DateTime(window.end.year, window.end.month, window.end.day - 1);
+    String date(DateTime d) => '${d.year}.${d.month}.${d.day}';
+    return '${date(window.start)} — ${date(end)}';
+  }
+
+  testWidgets('编辑中回顾通知保存完整草稿，显示点击时自然周起止日期', (tester) async {
+    await show(tester);
+    await tester.enterText(
+      find.byKey(const Key('dream-content-field')),
+      '回顾通知前的测试草稿',
+    );
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    container
+        .read(dreamEditorControllerProvider.notifier)
+        .contentChanged('回顾通知前的测试草稿及末尾');
+    await tester.pumpAndSettle();
+    expect(find.text('梦境统计'), findsOneWidget);
+    expect(
+      (await repository.getByDate(DateTime.now()))!.content,
+      '回顾通知前的测试草稿及末尾',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
+      currentWeekRange(),
+    );
+    expect(find.text('1 天'), findsOneWidget);
+  });
+
+  testWidgets('统计页月历史浏览收到回顾通知强制刷新最新周，重复点击也有效', (tester) async {
+    await show(tester);
+    await tab(tester, 'statistics');
+    await tester.tap(find.text('月'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('statistics-previous')));
+    await tester.pumpAndSettle();
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
+      currentWeekRange(),
+    );
+    await tester.tap(find.text('年'));
+    await tester.pumpAndSettle();
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
+      currentWeekRange(),
+    );
+  });
+
+  testWidgets('回顾保存失败保留草稿和日期，重试后再次点击可跳转', (tester) async {
+    await show(tester);
+    final old = DateTime(2026, 1, 2);
+    await container
+        .read(dreamEditorControllerProvider.notifier)
+        .selectDate(old);
+    await tester.pumpAndSettle();
+    repository.failSave = true;
+    await tester.enterText(
+      find.byKey(const Key('dream-content-field')),
+      '回顾失败保留草稿',
+    );
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    await tester.pumpAndSettle();
+    expect(text(tester), '回顾失败保留草稿');
+    expect(container.read(dreamEditorControllerProvider).date, old);
+    repository.failSave = false;
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    await tester.pumpAndSettle();
+    expect(find.text('梦境统计'), findsOneWidget);
+    expect((await repository.getByDate(old))!.content, '回顾失败保留草稿');
+  });
+
+  for (final latest in [
+    ReminderDestination.weeklyStatistics,
+    ReminderDestination.today,
+  ]) {
+    testWidgets('保存等待中通知交替以最后$latest为准', (tester) async {
+      await show(tester);
+      repository.saveGate = Completer<void>();
+      await tester.enterText(
+        find.byKey(const Key('dream-content-field')),
+        '交替通知草稿',
+      );
+      notifications.onTap!(
+        latest == ReminderDestination.today
+            ? ReminderDestination.weeklyStatistics
+            : ReminderDestination.today,
+      );
+      await tester.pump();
+      notifications.onTap!(latest);
+      repository.saveGate!.complete();
+      await tester.pumpAndSettle();
+      if (latest == ReminderDestination.weeklyStatistics) {
+        expect(find.text('梦境统计'), findsOneWidget);
+      } else {
+        expect(text(tester), '交替通知草稿');
+      }
+      expect((await repository.getByDate(DateTime.now()))!.content, '交替通知草稿');
+    });
+  }
+
+  testWidgets('回顾冷启动在编辑器加载后打开最新周', (tester) async {
+    notifications.launchedFromNotification = true;
+    notifications.launchDestination = ReminderDestination.weeklyStatistics;
+    await show(tester);
+    expect(find.text('梦境统计'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
+      currentWeekRange(),
     );
   });
 }

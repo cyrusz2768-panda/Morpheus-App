@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-10。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-11。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -18,6 +18,11 @@
 
 ## 2. 代码与交付基线
 
+- 本轮本地功能提交 `88ac881`；命令行 `git push origin main` 因缺少 GitHub HTTPS 登录失败，按仓库已有授权改用 GitHub 连接器同步同一文件树，不创建 PR。发布前已确认远程 main 仍为 `12703ac`，远程父提交、文件树及 CI 以实际交付核验结果为准。
+
+- 2026-11-11 根据验收反馈整理通知设置：每日提醒／每周回顾标题位于白色圆角卡片外，卡片首行为“消息通知”，关闭后折叠时间／星期，保留原设置。移除首尾说明、状态小字、系统通知栏及两个测试按钮；权限拒绝时保留按需系统设置入口。本轮基于 `12703ac` 的回顾功能工作区；用户已于 2026-11-11 明确确认“验收通过”，授权将 Android／iOS 共用功能及文案直接同步 GitHub 主线，不创建 PR。
+
+- 本轮统计回顾通知开发基于 `12703ac`，2026-11-10 fetch 确认与远程 `main` 一致，起始工作区干净。新增独立每周开关、星期/时间、草稿保护与周统计通知目标；按用户确认，点击打开当前自然周，周日包含截至当时的记录。2026-11-11 用户最终确认 iOS 模拟器验收通过；Android 本轮为构建检查，真机与逐项手工操作不因本次确认而扩展记录。提交与远程结果按下列交付记录核验。
 - 2026-11-10 用户确认周／月／年统计与底栏在 iPhone 18 Pro 模拟器验收通过。验收基线为 `a058b54`，功能开发基于 `a234951`；本次收尾在 `a058b54` 上补齐新增文字 ARB，完整 173 项测试通过。Android 人工验收与真机验证不因本次确认而标记完成。
 - 统计功能已通过已授权连接器同步主线 `a058b54`，远程父提交及文件树已核验，GitHub Actions [运行 42656692297](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/42656692297) 成功。命令行主线 push 因缺少 GitHub HTTPS 登录失败，本地原提交 `5583ef1` 等保留在 `codex/local-dream-statistics`。验收后文案收尾沿用连接器交付方式，不创建 PR。
 
@@ -44,9 +49,10 @@
 | 底部导航 | 实色圆角「记录、统计、日历」；选日回记录，切页先保存，通知撤销旧导航意图；`lib/app/main_bottom_navigation.dart` |
 | 侧边菜单 | 左上角菜单，82% 屏宽抽屉，带铃铛的“通知设置”；`dream_editor/presentation/widgets/` |
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
-| 每日提醒 | 时间/开关、可延后授权、系统设置入口、测试通知、点击回当天；`lib/features/reminders/` |
+| 每日提醒 | 分组卡片、独立消息通知开关、开启后展开时间、可延后授权与按需系统设置、点击回当天；`lib/features/reminders/` |
+| 每周统计回顾 | 默认关闭、周日 21:00，独立星期/时间与开关；点击打开最新自然周，见 [回顾通知说明](WEEKLY_REVIEW_GUIDE.md) |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 116 条中文 ARB，含已验收统计与底栏；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 112 条中文 ARB，含统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
 存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白由编辑流程删除。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
@@ -57,6 +63,13 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-11，同一验收工作区 | 用户明确确认“好的，验收通过”，授权双端源码及文字库上传 GitHub | 统计回顾通知与设置卡片的 iOS 模拟器用户验收通过；未提供额外逐项清单，不扩展为 Android 或真机验收 |
+| 2026-11-11，`12703ac` 上的回顾通知与卡片调整工作区 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，196 项；新增/调整卡片展开与折叠、移除旧入口、时间保留、保存失败保持展开、权限拒绝补救和窄屏大字号交互。中文资源当前 112 条；未提交或推送 |
+| 2026-11-11，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端通过（Gradle 47.3 秒、Xcode 41.2 秒）；Android 本轮未启动模拟器或人工验收 |
+| 2026-11-11，同上 | `flutter --no-version-check devices`、`flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定实际设备）与窗口操作 | 原 iPhone 18 Pro / iOS 27.2 保留数据升级，Dart VM 连接成功；实际经三条杠菜单打开新版通知设置，两个外置标题、开关及原时间显示正确，无旧说明/系统栏/测试按钮。页面留给用户验收；本轮未手动切换开关或验收实际通知送达，不代表用户最终验收或真机通过 |
+| 2026-11-10，`12703ac` 上的统计回顾通知工作区 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，194 项；覆盖旧配置兼容、真实文件重开、独立开关/调度、失败补偿、夏令时、双端插件桥接、冷启动与草稿/通知竞态。中文资源总计 125 条，生成物不提交 |
+| 2026-11-10，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端通过（Gradle 32.3 秒、Xcode 30.4 秒）；Android 本轮不启动模拟器，iOS 安装启动见后续记录，尚未用户验收或真机验证 |
+| 2026-11-10，同上 | `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当次实际设备）与设备窗口检查 | 原 iPhone 18 Pro / iOS 27.2 保留数据升级启动，Dart VM 已连接，实际首页及底栏显示；模拟器窗口已打开供用户验收。本轮未手动操作通知设置、系统通知点击或定时送达，不标为功能人工验收通过；尚未提交／推送 |
 | 2026-11-10，`a058b54` 上的验收后文案收尾 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，173 项；新增资源注入测试验证底栏、统计动态句式及趋势读屏接线。当前仍仅中文。本次无原生配置变更，未重复双端构建或操作模拟器，原生构建证据为下列功能基线 |
 | 2026-11-10，`a058b54` | 用户在本对话确认“验收成功，没有问题” | 周／月／年统计与底栏的 iPhone 18 Pro 模拟器验收通过；没有额外逐项操作记录，不扩展为 Android 或真机验收 |
 | 2026-11-10，`a234951` 上的统计与底栏 | `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，172 项（新增 22 项）；覆盖日期口径、真实 SQLite、实时变更、错误重试、窄屏大字号、导航草稿保护及通知竞态 |

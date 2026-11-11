@@ -44,6 +44,10 @@
   "@notificationNavigationFailed": {
     "description": "通知点击后导航失败，草稿仍保留"
   },
+  "weeklyNavigationFailed": "暂时无法打开周统计，请先重试保存当前草稿。",
+  "@weeklyNavigationFailed": {
+    "description": "点击回顾通知时无法安全保存或跳转的提示"
+  },
   "navigationIncomplete": "操作尚未完成，请稍后重试。",
   "@navigationIncomplete": {
     "description": "编辑器导航尚未完成"
@@ -188,7 +192,7 @@
   "@notificationNoticeTitle": {
     "description": "首次通知权限说明标题"
   },
-  "notificationNoticeBody": "为了在您设定的时间提醒记录梦境，需要您允许系统通知。\n\n如果您愿意，请在接下来的系统提示中允许通知。您也可以稍后开启，这不会影响记录和查看梦境。",
+  "notificationNoticeBody": "为了在您设定的时间提醒记录或回顾梦境，需要您允许系统通知。\n\n如果您愿意，请在接下来的系统提示中允许通知。您也可以稍后开启，这不会影响记录和查看梦境。",
   "@notificationNoticeBody": {
     "description": "应用内说明，不是系统授权弹窗"
   },
@@ -206,59 +210,35 @@
   },
   "dailyReminder": "每日提醒",
   "@dailyReminder": {
-    "description": "提醒设置页标题及开关标签"
+    "description": "通知设置中每日提醒卡片外的分组标题"
   },
-  "reminderPrompt": "给醒来的自己留一点时间，记下还没散去的梦。",
-  "@reminderPrompt": {
-    "description": "提醒页说明"
+  "reminderMessageNotifications": "消息通知",
+  "@reminderMessageNotifications": {
+    "description": "每日提醒和每周回顾卡片的首行开关标签；关闭后隐藏该卡片内的星期和时间细项"
+  },
+  "weeklyReminder": "每周回顾",
+  "@weeklyReminder": {
+    "description": "通知设置中每周回顾卡片外的分组标题"
   },
   "retryLoad": "重试加载",
   "@retryLoad": {
     "description": "提醒配置加载失败后的按钮"
   },
-  "reminderWaitingPermission": "已开启，等待系统通知权限",
-  "@reminderWaitingPermission": {
-    "description": "已保存开启意愿但系统未授权"
-  },
-  "reminderDisabled": "尚未开启",
-  "@reminderDisabled": {
-    "description": "每日提醒关闭状态"
-  },
   "reminderTime": "提醒时间",
   "@reminderTime": {
     "description": "提醒时间设置项"
   },
-  "systemNotifications": "系统通知",
-  "@systemNotifications": {
-    "description": "系统权限状态标题"
+  "weeklyReminderDay": "提醒日",
+  "@weeklyReminderDay": {
+    "description": "每周回顾卡片展开后选择发送星期的入口及弹窗标题"
   },
-  "notificationsAllowed": "已允许通知",
-  "@notificationsAllowed": {
-    "description": "系统权限已允许"
-  },
-  "notificationsNotAllowed": "尚未允许通知",
-  "@notificationsNotAllowed": {
-    "description": "系统权限未允许"
-  },
-  "requestNotificationPermission": "申请通知权限",
-  "@requestNotificationPermission": {
-    "description": "再次申请系统权限按钮"
+  "weeklyReminderTime": "提醒时间",
+  "@weeklyReminderTime": {
+    "description": "每周回顾卡片展开后的时间设置与时间选择器标题"
   },
   "openSystemSettings": "去系统设置",
   "@openSystemSettings": {
     "description": "打开系统通知设置"
-  },
-  "sendTestNotification": "发送测试通知",
-  "@sendTestNotification": {
-    "description": "发送即时测试通知按钮"
-  },
-  "reminderAutoSaveNote": "设置会自动保存。测试通知不会开启每日提醒。",
-  "@reminderAutoSaveNote": {
-    "description": "提醒自动保存说明"
-  },
-  "reminderSystemLimitNote": "提醒可能受系统节电、静音或专注模式影响。Android 的普通提醒可能稍有延迟。",
-  "@reminderSystemLimitNote": {
-    "description": "普通通知时效边界"
   },
   "reminderLoadFailed": "提醒设置暂时无法加载，请重试。梦境记录仍可正常使用。",
   "@reminderLoadFailed": {
@@ -272,7 +252,7 @@
   "@reminderPermissionDenied": {
     "description": "申请通知权限未获允许"
   },
-  "reminderEnableNeedsPermission": "开启每日提醒需要允许系统通知，请选择“去系统设置”。",
+  "reminderEnableNeedsPermission": "开启提醒需要允许系统通知，请选择“去系统设置”。",
   "@reminderEnableNeedsPermission": {
     "description": "开启提醒但无权限"
   },
@@ -295,6 +275,14 @@
   "dailyNotificationBody": "醒来了吗？点击这里，记录今天的梦境吧。",
   "@dailyNotificationBody": {
     "description": "每日通知正文，不含用户数据"
+  },
+  "weeklyNotificationTitle": "梦境周回顾",
+  "@weeklyNotificationTitle": {
+    "description": "每周统计回顾与其测试通知的通用标题，不含梦境正文"
+  },
+  "weeklyNotificationBody": "回顾一下这一周做过的梦吧",
+  "@weeklyNotificationBody": {
+    "description": "每周统计回顾与测试通知的通用正文，点击打开最新自然周"
   },
   "testNotificationTitle": "夜行者测试通知",
   "@testNotificationTitle": {
@@ -372,15 +360,6 @@
     "description": "菜单教学完整句子；menuIcon 是真正的菜单图标，占位符应保留一次并可按语言移动位置",
     "placeholders": {
       "menuIcon": {
-        "type": "String"
-      }
-    }
-  },
-  "reminderDailyAt": "每天 {time} 提醒记录梦境",
-  "@reminderDailyAt": {
-    "description": "提醒已开启时的说明，time 是 HH:mm",
-    "placeholders": {
-      "time": {
         "type": "String"
       }
     }

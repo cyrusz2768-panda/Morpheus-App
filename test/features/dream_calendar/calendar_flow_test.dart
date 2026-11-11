@@ -1,3 +1,4 @@
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -185,7 +186,7 @@ void main() {
         .selectDate(yesterday);
     await tester.pumpAndSettle();
     await openCalendar(tester);
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
     expect(find.text('梦境月历'), findsNothing);
     expect(container.read(dreamEditorControllerProvider).date, today);

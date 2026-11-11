@@ -13,7 +13,8 @@ import 'package:morpheus/features/dream_statistics/domain/dream_statistics.dart'
 /// 组合占位符，业务层只提供数据，避免页面拼接中文影响未来的语序调整。
 /// 页面只持有浏览的周期；数据库监听、聚合与编辑器保存各有独立职责。
 class DreamStatisticsPage extends ConsumerStatefulWidget {
-  const DreamStatisticsPage({super.key, this.now});
+  const DreamStatisticsPage({super.key, this.now, this.initialDate});
+  final DateTime? initialDate;
   final DateTime Function()? now;
 
   @override
@@ -34,7 +35,7 @@ class _DreamStatisticsPageState extends ConsumerState<DreamStatisticsPage>
   @override
   void initState() {
     super.initState();
-    _anchor = _today;
+    _anchor = widget.initialDate ?? _today;
     WidgetsBinding.instance.addObserver(this);
     _scheduleNextDay();
   }

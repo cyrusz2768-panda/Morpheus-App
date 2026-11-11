@@ -70,8 +70,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/statistics',
         name: 'dream-statistics',
-        builder: (context, state) =>
-            const _TabBackScope(child: DreamStatisticsPage()),
+        builder: (context, state) => _TabBackScope(
+          child: DreamStatisticsPage(
+            // 重复点击时即使已在统计页，也重建为周统计，撤销旧月/年浏览状态。
+            key: ValueKey(state.uri.toString()),
+            initialDate: DateTime.tryParse(
+              state.uri.queryParameters['week'] ?? '',
+            ),
+          ),
+        ),
       ),
       GoRoute(
         path: '/calendar-picker',

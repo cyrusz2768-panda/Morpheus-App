@@ -102,7 +102,7 @@ void main() {
     await chooseReminders(tester);
     // push() 保留原 URI；直接检查当前可见的设置页和可操作控件。
     expect(find.byType(ReminderSettingsPage), findsOneWidget);
-    expect(find.byKey(const Key('reminder-time-tile')), findsOneWidget);
+    expect(find.byKey(const Key('daily-reminder-switch')), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.byType(ReminderSettingsPage), findsNothing);
@@ -246,7 +246,7 @@ void main() {
     await openMenu(tester);
     await chooseReminders(tester);
     expect(find.byType(ReminderSettingsPage), findsOneWidget);
-    expect(find.byKey(const Key('reminder-time-tile')), findsOneWidget);
+    expect(find.byKey(const Key('daily-reminder-switch')), findsOneWidget);
     expect((await dreams.getByDate(DateTime.now()))!.content, draft);
   });
 

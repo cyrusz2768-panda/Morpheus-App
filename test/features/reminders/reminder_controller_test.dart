@@ -1,3 +1,4 @@
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -241,7 +242,92 @@ void main() {
     expect(current().tapSequence, 1);
     await controller.load();
     expect(current().tapSequence, 1);
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     expect(current().tapSequence, 2);
+  });
+
+  test('回顾与每日开关独立，星期时间分别保存，重读配置恢复周调度', () async {
+    notifications.granted = true;
+    expect(await controller.setWeeklyEnabled(true), isTrue);
+    expect(store.settings.enabled, isFalse);
+    expect(notifications.scheduled, isNull);
+    expect(notifications.weeklyScheduled!.weeklyTimeLabel, '21:00');
+    await controller.setEnabled(true);
+    await controller.setWeeklyWeekday(DateTime.wednesday);
+    await controller.setWeeklyTime(19, 35);
+    expect(notifications.scheduled!.timeLabel, '08:00');
+    expect(notifications.weeklyScheduled!.weeklyWeekday, DateTime.wednesday);
+    expect(notifications.weeklyScheduled!.weeklyTimeLabel, '19:35');
+    await controller.setEnabled(false);
+    expect(notifications.scheduled, isNull);
+    expect(notifications.weeklyScheduled, isNotNull);
+    await controller.load();
+    expect(notifications.weeklyScheduled!.weeklyTimeLabel, '19:35');
+    await controller.setEnabled(true);
+    await controller.setWeeklyEnabled(false);
+    expect(notifications.scheduled, isNotNull);
+    expect(notifications.weeklyScheduled, isNull);
+  });
+
+  test('回顾权限拒绝不启用；两项开启后撤销权限取消两项但保留意愿', () async {
+    expect(await controller.setWeeklyEnabled(true), isFalse);
+    expect(store.settings.weeklyEnabled, isFalse);
+    notifications.granted = true;
+    await controller.setEnabled(true);
+    await controller.setWeeklyEnabled(true);
+    notifications.granted = false;
+    await controller.load();
+    expect(notifications.weeklyScheduled, isNull);
+    expect(notifications.scheduled, isNull);
+    expect(store.settings.weeklyEnabled, isTrue);
+    expect(store.settings.enabled, isTrue);
+    notifications.granted = true;
+    await controller.load();
+    expect(notifications.weeklyScheduled, isNotNull);
+    expect(notifications.scheduled, isNotNull);
+  });
+
+  test('回顾配置写入或第二项调度失败恢复两项原日程', () async {
+    notifications.granted = true;
+    await controller.setEnabled(true);
+    await controller.setWeeklyEnabled(true);
+    store.writeFailures = 1;
+    expect(await controller.setWeeklyTime(18, 20), isFalse);
+    expect(store.settings.weeklyTimeLabel, '21:00');
+    expect(notifications.weeklyScheduled!.weeklyTimeLabel, '21:00');
+    expect(notifications.scheduled!.timeLabel, '08:00');
+    notifications.weeklyScheduleFailures = 1;
+    expect(await controller.setTime(7, 20), isFalse);
+    expect(store.settings.timeLabel, '08:00');
+    expect(notifications.scheduled!.timeLabel, '08:00');
+    expect(notifications.weeklyScheduled!.weeklyTimeLabel, '21:00');
+  });
+
+  test('回顾测试不修改开关，冷启动目标只消费一次，热点击可切换目标', () async {
+    notifications.granted = true;
+    expect(await controller.showTest(weekly: true), isTrue);
+    expect(notifications.weeklyTestNotifications, 1);
+    expect(store.settings.weeklyEnabled, isFalse);
+    expect(store.settings.enabled, isFalse);
+    notifications.launchedFromNotification = true;
+    notifications.launchDestination = ReminderDestination.weeklyStatistics;
+    await controller.load();
+    expect(current().destination, ReminderDestination.weeklyStatistics);
+    final sequence = current().tapSequence;
+    await controller.load();
+    expect(current().tapSequence, sequence);
+    notifications.onTap!(ReminderDestination.today);
+    expect(current().destination, ReminderDestination.today);
+    expect(current().tapSequence, sequence + 1);
+  });
+
+  test('配置读取失败仍能接收冷启动回顾目标', () async {
+    notifications.launchedFromNotification = true;
+    notifications.launchDestination = ReminderDestination.weeklyStatistics;
+    store.readFailures = 1;
+    await controller.load();
+    expect(current().error, isNotNull);
+    expect(current().tapSequence, 1);
+    expect(current().destination, ReminderDestination.weeklyStatistics);
   });
 }

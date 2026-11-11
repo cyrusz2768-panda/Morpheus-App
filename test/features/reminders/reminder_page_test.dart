@@ -1,3 +1,4 @@
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,7 +80,7 @@ void main() {
     await tester.tap(find.text('允许通知'));
     await tester.pumpAndSettle();
     expect(notifications.requests, 1);
-    expect(find.text('已允许通知'), findsOneWidget);
+    expect(find.text('系统通知'), findsNothing);
     expect(store.settings.enabled, isFalse);
     await tester.tap(find.byKey(const Key('daily-reminder-switch')));
     await tester.pumpAndSettle();
@@ -92,7 +93,11 @@ void main() {
     await openReminders(tester);
     await tester.tap(find.text('允许通知'));
     await tester.pumpAndSettle();
-    expect(find.text('尚未允许通知'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('daily-reminder-switch')));
+    await tester.pumpAndSettle();
+    expect(store.settings.enabled, isFalse);
+    expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
+    expect(find.byKey(const Key('reminder-error')), findsOneWidget);
     final systemSettings = find.text('去系统设置');
     await tester.ensureVisible(systemSettings);
     await tester.tap(systemSettings);
@@ -126,7 +131,11 @@ void main() {
   });
 
   testWidgets('时间选择器取消不改设置，确认后自动保存', (tester) async {
-    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
+    store.settings = ReminderSettings(
+      enabled: true,
+      noticeSeen: true,
+      menuHintSeen: true,
+    );
     await showApp(tester);
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
@@ -149,17 +158,30 @@ void main() {
     expect(find.text('07:35'), findsOneWidget);
   });
 
-  testWidgets('点击测试按钮发送通知但不开启每日提醒', (tester) async {
+  testWidgets('两个卡片标题在外，关闭时隐藏细项，去掉旧说明和测试入口', (tester) async {
     store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
-    notifications.granted = true;
     await showApp(tester);
     await openReminders(tester);
-    final button = find.byKey(const Key('test-notification-button'));
-    await tester.ensureVisible(button);
-    await tester.tap(button);
-    await tester.pumpAndSettle();
-    expect(notifications.testNotifications, 1);
-    expect(store.settings.enabled, isFalse);
+    expect(find.text('每日提醒'), findsOneWidget);
+    expect(find.text('每周回顾'), findsOneWidget);
+    expect(find.text('消息通知'), findsNWidgets(2));
+    expect(find.byType(Card), findsNWidgets(2));
+    for (final title in ['每日提醒', '每周回顾']) {
+      expect(
+        find.ancestor(of: find.text(title), matching: find.byType(Card)),
+        findsNothing,
+      );
+    }
+    expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
+    expect(find.byKey(const Key('weekly-reminder-day-tile')), findsNothing);
+    expect(find.byKey(const Key('weekly-reminder-time-tile')), findsNothing);
+    expect(find.textContaining('给醒来的自己'), findsNothing);
+    expect(find.textContaining('设置会自动保存'), findsNothing);
+    expect(find.textContaining('提醒可能受系统节电'), findsNothing);
+    expect(find.text('系统通知'), findsNothing);
+    expect(find.text('去系统设置'), findsNothing);
+    expect(find.textContaining('测试通知'), findsNothing);
+    expect(find.textContaining('回顾点击时所在'), findsNothing);
   });
 
   testWidgets('通知点击保存旧日期草稿，并显示当天已有内容', (tester) async {
@@ -175,7 +197,7 @@ void main() {
       find.byKey(const Key('dream-content-field')),
       '昨天尚未保存的测试草稿',
     );
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
     expect((await dreams.getByDate(yesterday))!.content, '昨天尚未保存的测试草稿');
     expect(container.read(dreamEditorControllerProvider).date, today);
@@ -183,12 +205,16 @@ void main() {
   });
 
   testWidgets('通知从设置页回到当天，关闭时间选择弹窗', (tester) async {
-    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
+    store.settings = ReminderSettings(
+      enabled: true,
+      noticeSeen: true,
+      menuHintSeen: true,
+    );
     await showApp(tester);
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
     await tester.pumpAndSettle();
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
     expect(find.byType(TimePickerDialog), findsNothing);
     expect(find.byKey(const Key('dream-content-field')), findsOneWidget);
@@ -207,7 +233,7 @@ void main() {
       find.byKey(const Key('dream-content-field')),
       '保存失败也要保留的测试草稿',
     );
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
     expect(container.read(dreamEditorControllerProvider).date, yesterday);
     expect(text(tester), '保存失败也要保留的测试草稿');
@@ -220,6 +246,120 @@ void main() {
     expect(text(tester), '冷启动读取的测试内容');
     expect(container.read(reminderControllerProvider).tapSequence, 1);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('开启回顾只展开该卡片，关闭隐藏细项并保留时间供重开恢复', (tester) async {
+    store.settings = ReminderSettings(noticeSeen: true, menuHintSeen: true);
+    notifications.granted = true;
+    await showApp(tester);
+    await openReminders(tester);
+    final weekly = find.byKey(const Key('weekly-reminder-switch'));
+    await tester.tap(weekly);
+    await tester.pumpAndSettle();
+    expect(find.text('21:00'), findsOneWidget);
+    expect(find.text('星期日'), findsOneWidget);
+    expect(store.settings.weeklyEnabled, isTrue);
+    expect(store.settings.enabled, isFalse);
+    expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
+    await tester.tap(weekly);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('weekly-reminder-day-tile')), findsNothing);
+    expect(notifications.weeklyScheduled, isNull);
+    expect(store.settings.weeklyTimeLabel, '21:00');
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await openReminders(tester);
+    await tester.tap(weekly);
+    await tester.pumpAndSettle();
+    expect(find.text('21:00'), findsOneWidget);
+    expect(notifications.weeklyScheduled!.weeklyWeekday, 7);
+  });
+
+  testWidgets('回顾星期选择取消不改设置，星期及时间确认后持久化', (tester) async {
+    store.settings = ReminderSettings(
+      weeklyEnabled: true,
+      noticeSeen: true,
+      menuHintSeen: true,
+    );
+    await showApp(tester);
+    await openReminders(tester);
+    final day = find.byKey(const Key('weekly-reminder-day-tile'));
+    await tester.ensureVisible(day);
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(store.settings.weeklyWeekday, 7);
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('weekly-day-3')));
+    await tester.pumpAndSettle();
+    expect(store.settings.weeklyWeekday, 3);
+    final time = find.byKey(const Key('weekly-reminder-time-tile'));
+    await tester.ensureVisible(time);
+    await tester.tap(time);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.keyboard_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), '19');
+    await tester.enterText(find.byType(TextField).at(1), '45');
+    await tester.tap(find.text('确定'));
+    await tester.pumpAndSettle();
+    expect(store.settings.weeklyTimeLabel, '19:45');
+    expect(store.settings.timeLabel, '08:00');
+  });
+  testWidgets('关闭保存失败时保持展开和原开关，重试成功后才收起', (tester) async {
+    store.settings = ReminderSettings(
+      enabled: true,
+      hour: 7,
+      minute: 35,
+      noticeSeen: true,
+      menuHintSeen: true,
+    );
+    notifications.granted = true;
+    await showApp(tester);
+    await openReminders(tester);
+    store.writeFailures = 1;
+    final toggle = find.byKey(const Key('daily-reminder-switch'));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(store.settings.enabled, isTrue);
+    expect(find.text('07:35'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
+    expect(store.settings.timeLabel, '07:35');
+    expect(notifications.scheduled, isNull);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('07:35'), findsOneWidget);
+  });
+
+  testWidgets('窄屏大字号两项展开仍可滚动操作且无溢出', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    store.settings = ReminderSettings(
+      enabled: true,
+      weeklyEnabled: true,
+      noticeSeen: true,
+      menuHintSeen: true,
+    );
+    await showApp(tester);
+    await openReminders(tester);
+    final time = find.byKey(const Key('weekly-reminder-time-tile'));
+    await tester.ensureVisible(time);
+    await tester.pumpAndSettle();
+    await tester.tap(time);
+    await tester.pumpAndSettle();
+    expect(find.byType(TimePickerDialog), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
   });
 }
 

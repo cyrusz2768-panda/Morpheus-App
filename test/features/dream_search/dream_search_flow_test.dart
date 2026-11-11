@@ -1,3 +1,4 @@
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -235,7 +236,7 @@ void main() {
         .selectDate(yesterday);
     await tester.pumpAndSettle();
     await openSearch(tester);
-    notifications.onTap!();
+    notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
     expect(field, findsNothing);
     expect(container.read(dreamEditorControllerProvider).date, today);

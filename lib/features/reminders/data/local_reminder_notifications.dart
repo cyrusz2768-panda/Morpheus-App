@@ -33,6 +33,40 @@ tz.TZDateTime nextReminderTime(tz.TZDateTime now, int hour, int minute) {
         );
 }
 
+/// 每周重复使用日历构造，不能把一周直接当成固定的 168 小时。
+/// 在夏令时变化、跨月和跨年时，仍以用户选择的当地星期与时间为准。
+tz.TZDateTime nextWeeklyReminderTime(
+  tz.TZDateTime now,
+  int weekday,
+  int hour,
+  int minute,
+) {
+  RangeError.checkValueInInterval(weekday, 1, 7, 'weekday');
+  RangeError.checkValueInInterval(hour, 0, 23, 'hour');
+  RangeError.checkValueInInterval(minute, 0, 59, 'minute');
+  var offset = (weekday - now.weekday + 7) % 7;
+  while (true) {
+    final candidate = tz.TZDateTime(
+      now.location,
+      now.year,
+      now.month,
+      now.day + offset,
+      hour,
+      minute,
+    );
+    // 夏令时跳过的本地时间会被 TZDateTime 归一成另一个小时。
+    // 插件以首次日期的时分作为永久重复模板，不能把 02:30 固化成 03:30；
+    // 此时寻找下一个存在该时分的星期作为模板，保留用户的原时间选择。
+    if (candidate.isAfter(now) &&
+        candidate.weekday == weekday &&
+        candidate.hour == hour &&
+        candidate.minute == minute) {
+      return candidate;
+    }
+    offset += 7;
+  }
+}
+
 class LocalReminderNotifications implements IReminderNotifications {
   LocalReminderNotifications({
     FlutterLocalNotificationsPlugin? plugin,
@@ -47,10 +81,19 @@ class LocalReminderNotifications implements IReminderNotifications {
   static const testId = 1102;
   static const channelId = 'dream_reminders';
   static const payload = 'morpheus:today';
+  static const weeklyId = 1103;
+  static const weeklyTestId = 1104;
+  static const weeklyPayload = 'morpheus:weekly-statistics';
+
+  static ReminderDestination? _destination(String? value) => switch (value) {
+    payload => ReminderDestination.today,
+    weeklyPayload => ReminderDestination.weeklyStatistics,
+    _ => null,
+  };
 
   final FlutterLocalNotificationsPlugin _plugin;
-  Future<bool>? _initialization;
-  void Function()? _onTap;
+  Future<ReminderDestination?>? _initialization;
+  void Function(ReminderDestination)? _onTap;
 
   NotificationDetails get _details => NotificationDetails(
     android: AndroidNotificationDetails(
@@ -72,7 +115,9 @@ class LocalReminderNotifications implements IReminderNotifications {
   );
 
   @override
-  Future<bool> initialize(void Function() onTap) async {
+  Future<ReminderDestination?> initialize(
+    void Function(ReminderDestination) onTap,
+  ) async {
     _onTap = onTap;
     try {
       return await (_initialization ??= _initializeOnce());
@@ -83,7 +128,7 @@ class LocalReminderNotifications implements IReminderNotifications {
     }
   }
 
-  Future<bool> _initializeOnce() async {
+  Future<ReminderDestination?> _initializeOnce() async {
     if (defaultTargetPlatform != TargetPlatform.android &&
         defaultTargetPlatform != TargetPlatform.iOS) {
       throw UnsupportedError('Reminders currently support Android and iOS');
@@ -100,7 +145,8 @@ class LocalReminderNotifications implements IReminderNotifications {
         ),
       ),
       onDidReceiveNotificationResponse: (response) {
-        if (response.payload == payload) _onTap?.call();
+        final target = _destination(response.payload);
+        if (target != null) _onTap?.call(target);
       },
     );
     // 提前建立渠道，以便权限检查也能发现用户单独关闭了这个渠道。
@@ -117,8 +163,9 @@ class LocalReminderNotifications implements IReminderNotifications {
           ),
         );
     final launch = await _plugin.getNotificationAppLaunchDetails();
-    return launch?.didNotificationLaunchApp == true &&
-        launch?.notificationResponse?.payload == payload;
+    return launch?.didNotificationLaunchApp == true
+        ? _destination(launch?.notificationResponse?.payload)
+        : null;
   }
 
   @override
@@ -198,12 +245,41 @@ class LocalReminderNotifications implements IReminderNotifications {
   Future<void> cancelDaily() => _plugin.cancel(id: dailyId);
 
   @override
-  Future<void> showTest() => _plugin.show(
-    id: testId,
-    title: _strings.testNotificationTitle,
-    body: _strings.testNotificationBody,
+  Future<void> scheduleWeekly(ReminderSettings settings) async {
+    final zone = await FlutterTimezone.getLocalTimezone();
+    final location = tz.getLocation(zone.identifier);
+    await _plugin.zonedSchedule(
+      id: weeklyId,
+      title: _strings.weeklyNotificationTitle,
+      body: _strings.weeklyNotificationBody,
+      scheduledDate: nextWeeklyReminderTime(
+        tz.TZDateTime.now(location),
+        settings.weeklyWeekday,
+        settings.weeklyHour,
+        settings.weeklyMinute,
+      ),
+      notificationDetails: _details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      // 重复任务不能固化首次发送的日期。点击时由 App 选取最新自然周。
+      payload: weeklyPayload,
+    );
+  }
+
+  @override
+  Future<void> cancelWeekly() => _plugin.cancel(id: weeklyId);
+
+  @override
+  Future<void> showTest({bool weekly = false}) => _plugin.show(
+    id: weekly ? weeklyTestId : testId,
+    title: weekly
+        ? _strings.weeklyNotificationTitle
+        : _strings.testNotificationTitle,
+    body: weekly
+        ? _strings.weeklyNotificationBody
+        : _strings.testNotificationBody,
     notificationDetails: _details,
-    payload: payload,
+    payload: weekly ? weeklyPayload : payload,
   );
 
   @override

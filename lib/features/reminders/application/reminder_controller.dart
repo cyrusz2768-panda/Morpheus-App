@@ -29,6 +29,7 @@ class ReminderState {
     this.permissionGranted = false,
     this.error,
     this.tapSequence = 0,
+    this.destination = ReminderDestination.today,
   });
 
   final ReminderSettings? settings;
@@ -38,6 +39,7 @@ class ReminderState {
   final String? error;
   // 每次通知点击递增。导航由 App 层处理，Controller 不持有 BuildContext。
   final int tapSequence;
+  final ReminderDestination destination;
 
   ReminderState copyWith({
     ReminderSettings? settings,
@@ -46,6 +48,7 @@ class ReminderState {
     bool? permissionGranted,
     String? error,
     int? tapSequence,
+    ReminderDestination? destination,
   }) => ReminderState(
     settings: settings ?? this.settings,
     isLoading: isLoading ?? this.isLoading,
@@ -53,6 +56,7 @@ class ReminderState {
     permissionGranted: permissionGranted ?? this.permissionGranted,
     error: error,
     tapSequence: tapSequence ?? this.tapSequence,
+    destination: destination ?? this.destination,
   );
 }
 
@@ -78,24 +82,32 @@ class ReminderController extends Notifier<ReminderState> {
     _working = true;
     state = state.copyWith(isLoading: true);
     try {
-      final settings = await _store.read();
-      if (!ref.mounted) return;
-      final launched = await _notifications.initialize(() {
+      final beforeInitialization = state.tapSequence;
+      final launched = await _notifications.initialize((destination) {
         if (ref.mounted) {
           state = state.copyWith(
             tapSequence: state.tapSequence + 1,
+            destination: destination,
             error: state.error,
           );
         }
       });
+      if (!ref.mounted) return;
+      if (launched != null && !_launchHandled) {
+        _launchHandled = true;
+        // 初始化期间若已收到更新的热点击，不让旧冷启动目标覆盖它。
+        if (state.tapSequence == beforeInitialization) {
+          state = state.copyWith(
+            tapSequence: state.tapSequence + 1,
+            destination: launched,
+          );
+        }
+      }
+      final settings = await _store.read();
       final granted = await _notifications.isPermissionGranted();
       await _applySchedule(settings, granted);
       if (!ref.mounted) return;
       state = state.copyWith(settings: settings, permissionGranted: granted);
-      if (launched && !_launchHandled) {
-        _launchHandled = true;
-        state = state.copyWith(tapSequence: state.tapSequence + 1);
-      }
     } catch (_) {
       if (ref.mounted) {
         state = state.copyWith(
@@ -110,10 +122,18 @@ class ReminderController extends Notifier<ReminderState> {
     }
   }
 
-  Future<void> _applySchedule(ReminderSettings settings, bool granted) =>
+  Future<void> _applySchedule(ReminderSettings settings, bool granted) async {
+    // 两项操作均尝试执行：某项平台故障不应阻止另一项关闭/同步。
+    // Future.wait 会等待两者结束再报告错误，补偿恢复也不会与旧调用并发。
+    await Future.wait([
       settings.enabled && granted
-      ? _notifications.scheduleDaily(settings)
-      : _notifications.cancelDaily();
+          ? _notifications.scheduleDaily(settings)
+          : _notifications.cancelDaily(),
+      settings.weeklyEnabled && granted
+          ? _notifications.scheduleWeekly(settings)
+          : _notifications.cancelWeekly(),
+    ]);
+  }
 
   /// 一次只允许一个写入/授权操作，快速连点不会让旧设置覆盖新设置。
   Future<bool> _run(Future<void> Function() operation) async {
@@ -178,24 +198,43 @@ class ReminderController extends Notifier<ReminderState> {
     await _commit(state.settings!.copyWith(hour: hour, minute: minute));
   });
 
-  Future<bool> setEnabled(bool enabled) => _run(() async {
-    if (enabled) {
-      final granted =
-          await _notifications.isPermissionGranted() ||
-          await _notifications.requestPermission();
-      if (!ref.mounted) return;
-      state = state.copyWith(permissionGranted: granted);
-      if (!granted) {
-        state = state.copyWith(
-          error: ref
-              .read(appLocalizationsProvider)
-              .reminderEnableNeedsPermission,
-        );
-        return;
-      }
-    }
-    await _commit(state.settings!.copyWith(enabled: enabled));
+  Future<bool> setWeeklyTime(int hour, int minute) => _run(() async {
+    await _commit(
+      state.settings!.copyWith(weeklyHour: hour, weeklyMinute: minute),
+    );
   });
+
+  Future<bool> setWeeklyWeekday(int weekday) => _run(() async {
+    await _commit(state.settings!.copyWith(weeklyWeekday: weekday));
+  });
+
+  Future<bool> setWeeklyEnabled(bool enabled) =>
+      _setEnabled(enabled, weekly: true);
+  Future<bool> setEnabled(bool enabled) => _setEnabled(enabled, weekly: false);
+
+  Future<bool> _setEnabled(bool enabled, {required bool weekly}) =>
+      _run(() async {
+        if (enabled) {
+          final granted =
+              await _notifications.isPermissionGranted() ||
+              await _notifications.requestPermission();
+          if (!ref.mounted) return;
+          state = state.copyWith(permissionGranted: granted);
+          if (!granted) {
+            state = state.copyWith(
+              error: ref
+                  .read(appLocalizationsProvider)
+                  .reminderEnableNeedsPermission,
+            );
+            return;
+          }
+        }
+        await _commit(
+          weekly
+              ? state.settings!.copyWith(weeklyEnabled: enabled)
+              : state.settings!.copyWith(enabled: enabled),
+        );
+      });
 
   /// 调度和文件不是同一个数据库事务，所以保存失败时补偿恢复旧调度。
   /// 界面只有在两个步骤都成功后才确认新设置，避免显示一个没生效的时间。
@@ -219,7 +258,7 @@ class ReminderController extends Notifier<ReminderState> {
     }
   }
 
-  Future<bool> showTest() => _run(() async {
+  Future<bool> showTest({bool weekly = false}) => _run(() async {
     final granted = await _notifications.isPermissionGranted();
     if (!ref.mounted) return;
     state = state.copyWith(permissionGranted: granted);
@@ -231,6 +270,6 @@ class ReminderController extends Notifier<ReminderState> {
       );
       return;
     }
-    await _notifications.showTest();
+    await _notifications.showTest(weekly: weekly);
   });
 }

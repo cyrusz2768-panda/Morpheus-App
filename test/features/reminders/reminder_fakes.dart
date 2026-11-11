@@ -37,19 +37,25 @@ class FakeReminderNotifications implements IReminderNotifications {
   bool granted = false;
   bool requestResult = false;
   bool launchedFromNotification = false;
+  ReminderDestination launchDestination = ReminderDestination.today;
+  ReminderSettings? weeklyScheduled;
+  int weeklyScheduleFailures = 0;
+  int weeklyTestNotifications = 0;
   int requests = 0;
   int permissionChecks = 0;
   int testNotifications = 0;
   int openedSettings = 0;
   int scheduleFailures = 0;
   ReminderSettings? scheduled;
-  void Function()? onTap;
+  void Function(ReminderDestination)? onTap;
   final calls = <String>[];
 
   @override
-  Future<bool> initialize(void Function() callback) async {
+  Future<ReminderDestination?> initialize(
+    void Function(ReminderDestination) callback,
+  ) async {
     onTap = callback;
-    return launchedFromNotification;
+    return launchedFromNotification ? launchDestination : null;
   }
 
   @override
@@ -85,7 +91,25 @@ class FakeReminderNotifications implements IReminderNotifications {
   Future<void> openSystemSettings() async => openedSettings++;
 
   @override
-  Future<void> showTest() async => testNotifications++;
+  Future<void> scheduleWeekly(ReminderSettings settings) async {
+    if (weeklyScheduleFailures > 0) {
+      weeklyScheduleFailures--;
+      throw StateError('Scripted weekly scheduling failure');
+    }
+    weeklyScheduled = settings;
+  }
+
+  @override
+  Future<void> cancelWeekly() async => weeklyScheduled = null;
+
+  @override
+  Future<void> showTest({bool weekly = false}) async {
+    if (weekly) {
+      weeklyTestNotifications++;
+    } else {
+      testNotifications++;
+    }
+  }
 
   @override
   void dispose() => onTap = null;

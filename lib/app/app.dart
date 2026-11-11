@@ -8,6 +8,8 @@ import 'package:morpheus/app/theme.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_state.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
+import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
+import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/l10n/app_text.dart';
 
 /// The root widget of the application.
@@ -25,7 +27,10 @@ class MorpheusApp extends ConsumerStatefulWidget {
 class _MorpheusAppState extends ConsumerState<MorpheusApp>
     with WidgetsBindingObserver {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
-  bool _pendingNotification = false;
+  // 点击时捕获日期，而非等待保存后再取时间；跨午夜写入不应改变用户目标。
+  // 可空请求替代布尔标记，让每日记录与每周统计走同一套草稿保护。
+  ({ReminderDestination destination, DateTime anchor, int sequence})?
+  _pendingNotification;
   bool _handlingNotification = false;
 
   @override
@@ -50,21 +55,25 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
 
   void _queueNotificationNavigation() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_openTodayFromNotification());
+      if (mounted) unawaited(_openFromNotification());
     });
     // 通知可能在完全静止的页面到达；只注册帧后回调不会自行产生新一帧。
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
-  Future<void> _openTodayFromNotification() async {
-    if (!_pendingNotification || _handlingNotification || !mounted) return;
+  Future<void> _openFromNotification() async {
+    if (_pendingNotification == null || _handlingNotification || !mounted) {
+      return;
+    }
     // 冷启动时数据库可能还在加载，保留意图，等待下面的状态监听再次处理。
     if (ref.read(dreamEditorControllerProvider).isLoading) return;
     _handlingNotification = true;
     final activity = ref.read(navigationActivityProvider.notifier);
     activity.cancel();
     final navigationToken = activity.begin()!;
-    _pendingNotification = false;
+    final request = _pendingNotification!;
+    _pendingNotification = null;
+    FocusManager.instance.primaryFocus?.unfocus();
     try {
       bool saved;
       do {
@@ -74,24 +83,37 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
         if (!mounted || !saved) break;
       } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
       if (!mounted) return;
+      // 等待中有更新的点击时，旧目标不再导航，由 finally 排队消费最新目标。
+      if (_pendingNotification != null) return;
+      final weekly =
+          request.destination == ReminderDestination.weeklyStatistics;
       final selected =
           saved &&
-          await ref
-              .read(dreamEditorControllerProvider.notifier)
-              .selectDate(DateTime.now());
-      if (!mounted) return;
+          (weekly ||
+              await ref
+                  .read(dreamEditorControllerProvider.notifier)
+                  .selectDate(request.anchor));
+      if (!mounted || _pendingNotification != null) return;
       if (selected) {
         final router = ref.read(appRouterProvider);
-        // 先关闭时间/日期弹窗和设置页，再回到编辑器，避免旧弹窗盖在当天上。
+        // 先关闭时间/日期弹窗和设置页，再进入目标页，避免旧弹窗遮住目标。
         while (router.canPop()) {
           router.pop();
         }
-        router.go('/');
+        router.go(
+          weekly
+              ? '/statistics?week=${DreamEntry.dateKey(request.anchor)}&request=${request.sequence}'
+              : '/',
+        );
       } else if (ref.read(dreamEditorControllerProvider).failure == null) {
         _messengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text(
-              ref.read(appLocalizationsProvider).notificationNavigationFailed,
+              weekly
+                  ? ref.read(appLocalizationsProvider).weeklyNavigationFailed
+                  : ref
+                        .read(appLocalizationsProvider)
+                        .notificationNavigationFailed,
             ),
           ),
         );
@@ -99,7 +121,9 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
     } finally {
       activity.end(navigationToken);
       _handlingNotification = false;
-      if (_pendingNotification && mounted) _queueNotificationNavigation();
+      if (_pendingNotification != null && mounted) {
+        _queueNotificationNavigation();
+      }
     }
   }
 
@@ -111,7 +135,11 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
     // 监听本身也会启动提醒服务。初始化不弹系统权限，不阻塞梦境页面。
     ref.listen<ReminderState>(reminderControllerProvider, (previous, next) {
       if (next.tapSequence != (previous?.tapSequence ?? 0)) {
-        _pendingNotification = true;
+        _pendingNotification = (
+          destination: next.destination,
+          anchor: DateTime.now(),
+          sequence: next.tapSequence,
+        );
         _queueNotificationNavigation();
       }
     });
@@ -119,7 +147,7 @@ class _MorpheusAppState extends ConsumerState<MorpheusApp>
       previous,
       next,
     ) {
-      if (!next.isLoading && _pendingNotification) {
+      if (!next.isLoading && _pendingNotification != null) {
         _queueNotificationNavigation();
       }
     });

@@ -1,7 +1,27 @@
 # 开发日志
 
+## 2026-11-11
+
+- 本地功能提交 `88ac881`。推送前 fetch 与连接器均确认远程 main 为 `12703ac`，没有远程新增提交；实际命令 `GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 push origin main` 因缺少 GitHub HTTPS 登录失败。按本会话与仓库已有授权，改用 GitHub 连接器提交同一文件树；不索取凭据，不创建 PR，不将命令行 push 记录为成功。远程父提交、内容与 CI 在交付时核验。
+
+- 用户最终明确确认“好的，验收通过”，授权将 Android／iOS 功能与文字库同步 GitHub；记录为统计回顾通知与设置卡片的 iOS 模拟器验收通过，无额外逐项清单，不扩大为 Android／真机验收。开发与验收基线为 `12703ac` 上的同一工作区，原 196 项测试和双端构建证据沿用本日下列实际记录，不因文档收尾重复构建。
+- 验收后复核全部 112 条中文 ARB，确认无重复键、语境说明齐全；将消息通知／每周设置、通用通知及导航错误资源归入对应语境，稳定键和已验收文字不变。重新生成本地化资源并检查差异、文档链接及隐私排除，生成目录和构建产物不提交。按授权直接同步主线，实际远程结果在交付时核验。
+
+- 根据用户验收反馈，在 `12703ac` 上的未提交统计回顾工作区继续调整通知设置；保留前轮源码、配置兼容及通知导航。每日提醒／每周回顾标题位于各自白色圆角卡片外，首行统一“消息通知”开关，关闭折叠时间／星期，重新开启恢复选择。关闭保存失败时保持已保存的开关和展开状态，不提前确认。
+- 移除首尾说明、开关状态小字、系统通知栏和两个测试按钮；用户尝试开启时仍查询／申请系统权限，被拒绝时只在错误提示旁提供系统设置入口。页面保持原紫色主题，未改数据库、依赖或原生工程。删除 14 条不用的界面资源，新增消息通知标签并更新每周回顾标题及语境，当前 112 条中文 ARB。
+- 更新页面交互测试及提醒／回顾／文案说明，最终验证和 iOS 模拟器展示结果待本轮收尾补充；按原约定继续等待用户最终验收后再提交推送。
+- `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` 最终通过，完整 196 项；覆盖折叠后菜单导航、独立开关、时间恢复、关闭写入失败保持原状态、权限拒绝与窄屏大字号。格式、中文资源数量和本地 Markdown 链接已核对。首次 fetch 遇到 HTTP/2 网络错误，HTTP/1.1 重试成功，本地与远程主线无差异；本轮仍不提前推送。
+- `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` 与 `flutter --no-version-check build ios --simulator --debug --no-pub` 均通过（47.3 秒、41.2 秒）。使用 `flutter --no-version-check devices` 查询实际设备，并通过已构建 Runner.app 在原 iPhone 18 Pro / iOS 27.2 保留数据升级运行，Dart VM 已连接。实际点击三条杠菜单和通知设置，新卡片、外部标题、开关与原 08:00／周日 21:00 已显示，旧说明、系统栏及测试按钮消失；未改动真实开关/时间，也未人工验收通知送达，页面留给用户继续确认，尚未提交或推送。
+
 ## 2026-11-10
 
+- 本轮基于干净主线 `12703ac` 开发 Android / iOS 统计回顾通知，fetch 确认本地与远程一致。用户明确要求 iOS 模拟器验收通过后再提交推送，本轮不提前上传。
+- 在同一“通知设置”中新增独立回顾开关、星期与时间，默认关闭、周日 21:00；同一私有 JSON 原子保存，旧配置缺失字段只在内存补默认值，不改数据库、依赖或原生权限。共享系统权限，独立通知 ID/payload，支持关闭取消和失败补偿。新增中文教学注释及 9 条中文 ARB（合计 125 条），同步通用权限说明。
+- 用户选择“周日就回顾当周，包含截至点击时的记录”。因此回顾通知打开点击时所在自然周（周一至周日），跨周点击打开最新周；明确起止日期，沿用当前周截至今天的统计分母。点击先 unfocus 并循环保存最新草稿，失败保留输入；冷启动、连续不同目标点击与统计页月／年切回周均走同一导航保护。
+- 提供“发送回顾测试通知”，不改变任何开关；无需等待周日即可验证系统通知点击链路。自动测试 194 项已通过，平台构建及 iOS 启动结果继续补充，尚未标记人工验收通过。
+- 本轮执行 `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`，最终全部通过（194 项）。新增用例覆盖真实配置重开、旧字段兼容、独立调度、失败补偿、跨年/DST、Android/iOS 方法通道、冷启动、统计月／年重置及最新通知优先。测试使用人工内容和独立数据。
+- `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` 与 `flutter --no-version-check build ios --simulator --debug --no-pub` 通过，分别 32.3 秒和 30.4 秒。Android 未启动或人工验收，iOS 安装启动单独记录。同步提醒／统计／文案说明及新回顾指南，本地 Markdown 链接与 `git diff --check` 通过。
+- 使用已构建 Runner.app 执行 `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当次实际设备），在原 iPhone 18 Pro / iOS 27.2 保留数据升级启动。Dart VM 连接成功，Device Hub 中实际首页、日期与底栏已显示，窗口留给用户验收；本轮未操作通知设置、系统通知点击或等待实际定时送达，不记录为功能人工验收通过。代码、文案资源与文档保留在本地工作区，待用户确认后提交推送。
 - 用户在本对话明确确认“验收成功，没有问题”，记录为周／月／年统计与底栏的 iPhone 18 Pro 模拟器验收通过，基线 `a058b54`。不扩展为 Android 或真机验收，也不补造逐项操作清单。
 - 验收后在干净主线 `a058b54` 上完成文字库收尾，fetch 确认无远程新增提交。新增 31 条带语境和占位符说明的 ARB（总计 116 条），统计／底栏统一使用 `context.l10n`；动态日期、数量整句、周期选择、未来分桶及读屏标签由资源生成，复用原月份／星期／重试文案，保留已验收的中文显示与统计行为。
 - `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` 全部通过，完整 173 项。新增资源注入用例覆盖底栏标签、统计动态句式及趋势读屏接线；生成目录不提交。无原生配置或依赖变化，本次未重复双端构建或操作模拟器，沿用下列功能基线的原生构建证据。

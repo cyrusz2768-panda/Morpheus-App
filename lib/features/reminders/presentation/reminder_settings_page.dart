@@ -41,12 +41,17 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
         .acknowledgeNotice(requestPermission: allow);
   }
 
-  Future<void> _chooseTime() async {
+  Future<void> _chooseTime({bool weekly = false}) async {
     final settings = ref.read(reminderControllerProvider).settings!;
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      helpText: context.l10n.selectReminderTime,
+      initialTime: TimeOfDay(
+        hour: weekly ? settings.weeklyHour : settings.hour,
+        minute: weekly ? settings.weeklyMinute : settings.minute,
+      ),
+      helpText: weekly
+          ? context.l10n.weeklyReminderTime
+          : context.l10n.selectReminderTime,
       cancelText: context.l10n.cancel,
       confirmText: context.l10n.confirm,
       builder: (context, child) => MediaQuery(
@@ -55,9 +60,38 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
       ),
     );
     if (mounted && time != null) {
+      final controller = ref.read(reminderControllerProvider.notifier);
+      if (weekly) {
+        await controller.setWeeklyTime(time.hour, time.minute);
+      } else {
+        await controller.setTime(time.hour, time.minute);
+      }
+    }
+  }
+
+  Future<void> _chooseWeekday() async {
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(context.l10n.weeklyReminderDay),
+        children: [
+          for (var day = 1; day <= 7; day++)
+            SimpleDialogOption(
+              key: Key('weekly-day-$day'),
+              onPressed: () => Navigator.pop(context, day),
+              child: Text(context.l10n.weekdayLabel('$day')),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.cancel),
+          ),
+        ],
+      ),
+    );
+    if (mounted && selected != null) {
       await ref
           .read(reminderControllerProvider.notifier)
-          .setTime(time.hour, time.minute);
+          .setWeeklyWeekday(selected);
     }
   }
 
@@ -77,15 +111,13 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
     }
     final editable = settings != null && !state.isLoading && !state.isBusy;
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.dailyReminder)),
+      appBar: AppBar(title: Text(context.l10n.notificationSettings)),
       body: SafeArea(
         child: state.isLoading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  Text(context.l10n.reminderPrompt),
-                  const SizedBox(height: 20),
                   if (state.error != null) ...[
                     Text(
                       state.error!,
@@ -94,72 +126,69 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                    TextButton(
-                      onPressed: state.isBusy ? null : controller.load,
-                      child: Text(context.l10n.retryLoad),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        TextButton(
+                          onPressed: state.isBusy ? null : controller.load,
+                          child: Text(context.l10n.retryLoad),
+                        ),
+                        // 权限补救只在失败时出现，不另占一栏常驻系统状态。
+                        // 开关仍通过 Controller 查询/申请权限，页面不调用插件。
+                        if (settings != null && !state.permissionGranted)
+                          TextButton(
+                            key: const Key('reminder-permission-settings'),
+                            onPressed: editable
+                                ? controller.openSystemSettings
+                                : null,
+                            child: Text(context.l10n.openSystemSettings),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                   ],
                   if (settings != null) ...[
-                    SwitchListTile(
-                      key: const Key('daily-reminder-switch'),
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(context.l10n.dailyReminder),
-                      subtitle: Text(
-                        settings.enabled
-                            ? state.permissionGranted
-                                  ? context.l10n.reminderDailyAt(
-                                      settings.timeLabel,
-                                    )
-                                  : context.l10n.reminderWaitingPermission
-                            : context.l10n.reminderDisabled,
-                      ),
-                      value: settings.enabled,
+                    _ReminderSection(
+                      key: const Key('daily-reminder-section'),
+                      title: context.l10n.dailyReminder,
+                      enabled: settings.enabled,
+                      switchKey: const Key('daily-reminder-switch'),
                       onChanged: editable ? controller.setEnabled : null,
+                      children: [
+                        _ReminderOption(
+                          key: const Key('reminder-time-tile'),
+                          title: context.l10n.reminderTime,
+                          value: settings.timeLabel,
+                          onTap: editable ? _chooseTime : null,
+                        ),
+                      ],
                     ),
-                    ListTile(
-                      key: const Key('reminder-time-tile'),
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(context.l10n.reminderTime),
-                      trailing: Text(
-                        settings.timeLabel,
-                        key: const Key('reminder-time'),
-                      ),
-                      onTap: editable ? _chooseTime : null,
+                    const SizedBox(height: 24),
+                    _ReminderSection(
+                      key: const Key('weekly-reminder-section'),
+                      title: context.l10n.weeklyReminder,
+                      enabled: settings.weeklyEnabled,
+                      switchKey: const Key('weekly-reminder-switch'),
+                      onChanged: editable ? controller.setWeeklyEnabled : null,
+                      children: [
+                        _ReminderOption(
+                          key: const Key('weekly-reminder-day-tile'),
+                          title: context.l10n.weeklyReminderDay,
+                          value: context.l10n.weekdayLabel(
+                            '${settings.weeklyWeekday}',
+                          ),
+                          onTap: editable ? _chooseWeekday : null,
+                        ),
+                        _ReminderOption(
+                          key: const Key('weekly-reminder-time-tile'),
+                          title: context.l10n.weeklyReminderTime,
+                          value: settings.weeklyTimeLabel,
+                          onTap: editable
+                              ? () => _chooseTime(weekly: true)
+                              : null,
+                        ),
+                      ],
                     ),
-                    const Divider(),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(context.l10n.systemNotifications),
-                      subtitle: Text(
-                        state.permissionGranted
-                            ? context.l10n.notificationsAllowed
-                            : context.l10n.notificationsNotAllowed,
-                      ),
-                    ),
-                    if (!state.permissionGranted)
-                      OutlinedButton(
-                        onPressed: editable
-                            ? controller.requestPermission
-                            : null,
-                        child: Text(context.l10n.requestNotificationPermission),
-                      ),
-                    TextButton(
-                      onPressed: editable
-                          ? controller.openSystemSettings
-                          : null,
-                      child: Text(context.l10n.openSystemSettings),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('test-notification-button'),
-                      onPressed: editable ? controller.showTest : null,
-                      icon: const Icon(Icons.notifications_outlined),
-                      label: Text(context.l10n.sendTestNotification),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(context.l10n.reminderAutoSaveNote),
-                    const SizedBox(height: 8),
-                    Text(context.l10n.reminderSystemLimitNote),
                   ],
                   if (state.isBusy)
                     const Padding(
@@ -171,4 +200,103 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
       ),
     );
   }
+}
+
+/// 每类提醒的标题在卡片外，内部首行始终保留开关。
+/// 细项是否展开直接由已保存的 enabled 决定：保存失败时不提前折叠，
+/// 关闭也只隐藏控件，不清空原时间，重新开启即可继续使用上次选择。
+class _ReminderSection extends StatelessWidget {
+  const _ReminderSection({
+    super.key,
+    required this.title,
+    required this.enabled,
+    required this.switchKey,
+    required this.onChanged,
+    required this.children,
+  });
+
+  final String title;
+  final bool enabled;
+  final Key switchKey;
+  final ValueChanged<bool>? onChanged;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        child: Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+      Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            SwitchListTile(
+              key: switchKey,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              title: Text(context.l10n.reminderMessageNotifications),
+              value: enabled,
+              onChanged: onChanged,
+            ),
+            // 不把隐藏行留在语义树/焦点链中，关闭后不能误点到时间选择器。
+            if (enabled)
+              for (final child in children) ...[
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                child,
+              ],
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _ReminderOption extends StatelessWidget {
+  const _ReminderOption({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onTap,
+  });
+  final String title;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    title: Text(title),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Icon(Icons.chevron_right, size: 20),
+      ],
+    ),
+    onTap: onTap,
+  );
 }
