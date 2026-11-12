@@ -2,6 +2,9 @@
 
 ## 2026-11-12
 
+- 每日记录与验收后文字库经 GitHub 连接器直接发布为 `ab8bbec`，核验父提交 `0c3a00a` 与文件树完全一致；原本地提交 `a5c037c`／`8c87b22` 保留在 `codex/local-daily-record-upgrade`。发布后命令行 fetch 成功，本地主线已对齐远程。
+- [GitHub Actions 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 首次运行失败，实际使用自动更新的 Flutter 3.50.0，分析报 29 条旧 Material 导入及生成本地化类弃用信息，测试被跳过；不是本机 214 项测试失败。固定 CI 为本机已验收 Flutter 3.47.7，不改 App 依赖、界面或降低检查规则；后续运行单独核验，不把首次失败写为通过。
+
 - 用户在 `a5c037c` 的每日记录功能交付后明确确认“ok，没问题”，授权上传 GitHub 并完成新增文字库收尾；记录为本轮 iOS 模拟器用户验收通过，不扩展为 Android／真机验收。以下本日“先不上传”记录是验收前阶段，已被本次授权覆盖。
 - 验收后复核新增文案：全部用户可见标题、选项、按钮、动态评分、未填写与历史整句摘要均走 ARB，补齐多项因素分隔符并移除未使用摘要资源；当前 143 条，无重复键且语境说明齐全，中文显示保持不变。新增资源注入回归，验证名称、标点、动态分数及摘要可由资源提供。
 - 2026-11-12 在 `a5c037c` 上实际执行 `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`，全部通过，214 项。仅文案接线和文档收尾，未重复双端构建、未重新操作模拟器，沿用本日下列功能构建与用户验收证据。

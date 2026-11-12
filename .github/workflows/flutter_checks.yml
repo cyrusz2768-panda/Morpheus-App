@@ -16,12 +16,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # subosito/flutter-action is a widely used community action. Pinning the
-      # stable channel keeps practice-project setup simple. A production project
-      # should additionally pin an exact Flutter version after it is selected.
+      # 与本机双端构建及验收使用相同 SDK，避免 stable 自动换版后改变
+      # 组件 API、分析规则和依赖解析。SDK 升级应单独验证后更新此版本。
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.7'
           channel: stable
           cache: true
 

@@ -143,7 +143,7 @@ Version 0.1 暂不包含：
 
 ### 环境要求
 
-- Flutter 3.44 或更新的兼容稳定版；本次验证使用 Flutter 3.47.7。
+- Flutter 3.44 或更新的兼容稳定版；当前开发验证与 CI 固定使用 Flutter 3.47.7，SDK 升级另行验证。
 - Dart >=3.12 且 <4.0，由 Flutter SDK 自带。
 - 安卓运行环境：Android Studio、Android SDK Platform 36、Build-Tools 36.0.0、NDK 28.2.13676358，以及安卓模拟器或设备。
 - iOS 运行环境：仅在开发 iOS 时安装并配置完整 Xcode 及相应依赖；不要求先配好 iOS 才能开发安卓。

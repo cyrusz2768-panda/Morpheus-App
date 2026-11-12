@@ -18,6 +18,9 @@
 
 ## 2. 代码与交付基线
 
+- 每日记录与文字库已通过连接器发布为 `ab8bbec`，父提交 `0c3a00a`，远程文件树与本地 `8c87b22` 完全一致；本地原提交保留在 `codex/local-daily-record-upgrade`。发布后命令行 fetch 恢复成功，本地 main 已对齐该远程提交。
+- 首次 [CI 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 在分析阶段失败：工作流自动选用了 Flutter 3.50.0，全项目原有 Material 导入及生成本地化类出现 29 条弃用提示，测试步骤未执行。现将 CI 固定到双端构建已验收的 Flutter 3.47.7，不升级 App 依赖或迁移组件；修复后运行需实际核验，不能把首次失败记为通过。
+
 - 2026-11-12 每日记录升级基于 `0c3a00a`，本地功能提交 `a5c037c`。开发阶段按用户要求仅本地测试并打开 iOS 模拟器；用户同日确认“ok，没问题”，授权上传 GitHub 并完成文字库收尾。新增分类、正文、可空评分、因素与结束页；说明见 [每日记录](DAILY_RECORD_GUIDE.md)。本次记录为 iOS 模拟器用户验收通过，不扩展为 Android 或真机验收。
 - 验收后复核文字库共 143 条，补齐因素分隔符、移除未使用摘要键并添加资源注入回归；完整 214 项测试、格式与静态分析通过。两次命令行 fetch 分别遇到 HTTP/2 错误和 HTTP/1.1 连接超时，已用授权 GitHub 连接器确认远程主线仍为 `0c3a00a`；本次沿用连接器直接同步 [main](https://github.com/cyrusz2768-panda/Morpheus-App/tree/main)，不创建 PR，不声称命令行 push 成功。发布前核对父提交，发布后核对文件树和 GitHub Actions，实际结果见本轮交付回复。
 
