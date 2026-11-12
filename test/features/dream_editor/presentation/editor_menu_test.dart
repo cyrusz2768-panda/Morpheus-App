@@ -1,3 +1,5 @@
+import '../../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -44,16 +46,19 @@ void main() {
       ),
     );
     if (settle) await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> openMenu(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('open-menu-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> chooseReminders(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('open-reminders-menu-item')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   bool isDrawerOpen(WidgetTester tester) => tester
@@ -105,6 +110,7 @@ void main() {
     expect(find.byKey(const Key('daily-reminder-switch')), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byType(ReminderSettingsPage), findsNothing);
     expect(isDrawerOpen(tester), isFalse);
     expect(find.byKey(const Key('dream-content-field')), findsOneWidget);
@@ -135,6 +141,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('dismiss-menu-intro-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(intro, findsNothing);
     expect(isDrawerOpen(tester), isFalse);
     expect(store.settings.menuHintSeen, isTrue);
@@ -149,11 +156,13 @@ void main() {
     await showApp(tester);
     await tester.tap(find.byKey(const Key('dismiss-menu-intro-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.menuHintSeen, isTrue);
 
     // 重新创建 Router、页面和 ProviderContainer，验证持久化标志而非页面局部变量。
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     container.dispose();
     container = createContainer();
     await showApp(tester);
@@ -168,11 +177,12 @@ void main() {
     await showApp(tester);
     await tester.tap(find.byKey(const Key('intro-open-menu-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.byKey(const Key('menu-reminder-intro')), findsNothing);
     expect(isDrawerOpen(tester), isTrue);
     expect(find.byType(ReminderSettingsPage), findsNothing);
-    expect(find.byKey(const Key('dream-content-field')), findsOneWidget);
+    expect(find.byKey(const Key('daily-mood-good')), findsOneWidget);
     expect(store.settings.menuHintSeen, isTrue);
     expect(store.settings.noticeSeen, isFalse);
     expect(notifications.requests, 0);
@@ -186,6 +196,7 @@ void main() {
     expect(notifications.requests, 0);
     await tester.tap(find.text('允许通知'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(notifications.requests, 1);
     expect(store.settings.noticeSeen, isTrue);
     expect(store.settings.menuHintSeen, isTrue);
@@ -198,20 +209,24 @@ void main() {
     await showApp(tester);
     await tester.tap(find.byKey(const Key('dismiss-menu-intro-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.menuHintSeen, isFalse);
 
     await container.read(reminderControllerProvider.notifier).load();
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openMenu(tester);
     await chooseReminders(tester);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
       '关闭说明后仍然可以记录梦境',
     );
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(const Key('menu-reminder-intro')), findsNothing);
     expect(store.settings.menuHintSeen, isFalse);
     expect(notifications.requests, 0);
@@ -243,6 +258,7 @@ void main() {
     dreams.failSave = false;
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openMenu(tester);
     await chooseReminders(tester);
     expect(find.byType(ReminderSettingsPage), findsOneWidget);
@@ -269,10 +285,12 @@ void main() {
 
     editorRead.complete();
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(const Key('menu-reminder-intro')), findsOneWidget);
     expect(notifications.requests, 0);
     await tester.tap(find.byKey(const Key('dismiss-menu-intro-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   });
 
   testWidgets('设置在抽屉打开期间读完时，首次说明等待抽屉关闭', (tester) async {
@@ -288,14 +306,17 @@ void main() {
 
     reminderRead.complete();
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(const Key('menu-reminder-intro')), findsNothing);
     expect(notifications.requests, 0);
     await tester.tap(find.byTooltip('关闭菜单'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(isDrawerOpen(tester), isFalse);
     expect(find.byKey(const Key('menu-reminder-intro')), findsOneWidget);
     await tester.tap(find.byKey(const Key('dismiss-menu-intro-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   });
 }
 
@@ -323,8 +344,9 @@ class _DreamRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (failSave) throw StateError('Scripted dream save failure');
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }

@@ -1,3 +1,5 @@
+import '../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,13 +41,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> openReminders(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('open-menu-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('open-reminders-menu-item')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   String text(WidgetTester tester) => tester
@@ -65,10 +70,12 @@ void main() {
     expect(notifications.requests, 0);
     await tester.tap(find.text('稍后再说'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.noticeSeen, isTrue);
     expect(notifications.requests, 0);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openReminders(tester);
     expect(find.byType(AlertDialog), findsNothing);
   });
@@ -79,11 +86,13 @@ void main() {
     await openReminders(tester);
     await tester.tap(find.text('允许通知'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(notifications.requests, 1);
     expect(find.text('系统通知'), findsNothing);
     expect(store.settings.enabled, isFalse);
     await tester.tap(find.byKey(const Key('daily-reminder-switch')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.enabled, isTrue);
     expect(notifications.scheduled!.timeLabel, '08:00');
   });
@@ -93,8 +102,10 @@ void main() {
     await openReminders(tester);
     await tester.tap(find.text('允许通知'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('daily-reminder-switch')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.enabled, isFalse);
     expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
     expect(find.byKey(const Key('reminder-error')), findsOneWidget);
@@ -102,15 +113,18 @@ void main() {
     await tester.ensureVisible(systemSettings);
     await tester.tap(systemSettings);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(notifications.openedSettings, 1);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
       '未开启提醒也可以记录的测试内容',
     );
     await tester.pump(const Duration(milliseconds: 850));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(
       (await dreams.getByDate(DateTime.now()))!.content,
       '未开启提醒也可以记录的测试内容',
@@ -128,6 +142,7 @@ void main() {
     expect((await dreams.getByDate(DateTime.now()))!.content, '进入设置前的测试草稿');
     await tester.tap(find.text('稍后再说'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   });
 
   testWidgets('时间选择器取消不改设置，确认后自动保存', (tester) async {
@@ -140,20 +155,25 @@ void main() {
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byType(TimePickerDialog), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.timeLabel, '08:00');
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     // 使用真实时间选择器的输入模式，验证中文页面到持久化之间的完整链路。
     await tester.tap(find.byIcon(Icons.keyboard_outlined));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '07');
     await tester.enterText(fields.at(1), '35');
     await tester.tap(find.text('确定'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.timeLabel, '07:35');
     expect(find.text('07:35'), findsOneWidget);
   });
@@ -193,12 +213,14 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(yesterday);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
       '昨天尚未保存的测试草稿',
     );
     notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect((await dreams.getByDate(yesterday))!.content, '昨天尚未保存的测试草稿');
     expect(container.read(dreamEditorControllerProvider).date, today);
     expect(text(tester), '今天已保存的测试内容');
@@ -214,8 +236,10 @@ void main() {
     await openReminders(tester);
     await tester.tap(find.byKey(const Key('reminder-time-tile')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byType(TimePickerDialog), findsNothing);
     expect(find.byKey(const Key('dream-content-field')), findsOneWidget);
   });
@@ -228,6 +252,7 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(yesterday);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     dreams.failSave = true;
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
@@ -235,6 +260,7 @@ void main() {
     );
     notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(container.read(dreamEditorControllerProvider).date, yesterday);
     expect(text(tester), '保存失败也要保留的测试草稿');
   });
@@ -256,6 +282,7 @@ void main() {
     final weekly = find.byKey(const Key('weekly-reminder-switch'));
     await tester.tap(weekly);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('21:00'), findsOneWidget);
     expect(find.text('星期日'), findsOneWidget);
     expect(store.settings.weeklyEnabled, isTrue);
@@ -263,14 +290,17 @@ void main() {
     expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
     await tester.tap(weekly);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(const Key('weekly-reminder-day-tile')), findsNothing);
     expect(notifications.weeklyScheduled, isNull);
     expect(store.settings.weeklyTimeLabel, '21:00');
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openReminders(tester);
     await tester.tap(weekly);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('21:00'), findsOneWidget);
     expect(notifications.weeklyScheduled!.weeklyWeekday, 7);
   });
@@ -287,24 +317,31 @@ void main() {
     await tester.ensureVisible(day);
     await tester.tap(day);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.weeklyWeekday, 7);
     await tester.tap(day);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('weekly-day-3')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.weeklyWeekday, 3);
     final time = find.byKey(const Key('weekly-reminder-time-tile'));
     await tester.ensureVisible(time);
     await tester.tap(time);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byIcon(Icons.keyboard_outlined));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.enterText(find.byType(TextField).at(0), '19');
     await tester.enterText(find.byType(TextField).at(1), '45');
     await tester.tap(find.text('确定'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.weeklyTimeLabel, '19:45');
     expect(store.settings.timeLabel, '08:00');
   });
@@ -323,16 +360,19 @@ void main() {
     final toggle = find.byKey(const Key('daily-reminder-switch'));
     await tester.tap(toggle);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(store.settings.enabled, isTrue);
     expect(find.text('07:35'), findsOneWidget);
     expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
     await tester.tap(toggle);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(const Key('reminder-time-tile')), findsNothing);
     expect(store.settings.timeLabel, '07:35');
     expect(notifications.scheduled, isNull);
     await tester.tap(toggle);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('07:35'), findsOneWidget);
   });
 
@@ -354,12 +394,15 @@ void main() {
     final time = find.byKey(const Key('weekly-reminder-time-tile'));
     await tester.ensureVisible(time);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(time);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byType(TimePickerDialog), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   });
 }
 
@@ -370,8 +413,9 @@ class _DreamRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (failSave) throw StateError('Scripted dream save failure');
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }

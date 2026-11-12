@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/dream_editor/data/dream_repository.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 
@@ -23,13 +24,8 @@ class InMemoryDreamRepository implements DreamRepository {
   Future<List<DreamEntry>> getAll() async {
     // 复制成独立列表再排序，避免历史页面的读取改变存储本身。
     // 与正式仓库保持相同的空白判断和日期顺序，Widget 测试才有参考价值。
-    final entries =
-        _entries.values
-            .where((entry) => entry.content.trim().isNotEmpty)
-            .toList()
-          ..sort(
-            (first, second) => second.dreamDate.compareTo(first.dreamDate),
-          );
+    final entries = _entries.values.where((entry) => entry.hasData).toList()
+      ..sort((first, second) => second.dreamDate.compareTo(first.dreamDate));
     return List<DreamEntry>.unmodifiable(entries);
   }
 
@@ -37,6 +33,7 @@ class InMemoryDreamRepository implements DreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     final normalizedDate = DreamEntry.dateOnly(date);
     final key = DreamEntry.dateKey(normalizedDate);
@@ -47,6 +44,7 @@ class InMemoryDreamRepository implements DreamRepository {
       id: existing?.id ?? key,
       dreamDate: normalizedDate,
       content: content,
+      feedback: feedback ?? existing?.feedback ?? const DailyFeedback(),
       createdAt: existing?.createdAt ?? nowUtc,
       updatedAt: nowUtc,
     );

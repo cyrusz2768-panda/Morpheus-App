@@ -1,3 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
+import 'package:morpheus/features/dream_editor/presentation/daily_feedback_text.dart';
+import '../helpers/daily_record_test_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +31,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     final context = tester.element(
       find.byKey(const Key('dream-content-field')),
     );
@@ -35,6 +40,41 @@ void main() {
     expect(find.text('夜行者'), findsOneWidget);
     expect(find.byTooltip('搜索梦境'), findsOneWidget);
     expect(AppLocalizations.supportedLocales, const [Locale('zh')]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('每日反馈的名称、分隔符、评分和整句摘要都取自资源', (tester) async {
+    // 用不同顺序的测试资源验证数据流，而不是重复断言正式中文常量。
+    // 如果页面拼接中文标点或句子，这个用例就无法得到完整的注入结果。
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: morpheusLocale,
+        localizationsDelegates: const [
+          _DailyResourcesDelegate(),
+          ...AppLocalizations.localizationsDelegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Text(
+            context.l10n.dailyFeedbackSummary(
+              moodLabel(context, DreamMood.good),
+              context.l10n.dailyScoreValue(4),
+              factorsLabel(
+                context,
+                const DailyFeedback(
+                  factors: {SleepFactor.stress, SleepFactor.caffeine},
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('score=4 points; factors=stress / caffeine; mood=good dream'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -67,4 +107,31 @@ void main() {
 class _ErrorResources extends AppLocalizationsZh {
   @override
   String get reminderLoadFailed => 'resource load failure';
+}
+
+class _DailyResources extends AppLocalizationsZh {
+  @override
+  String get dailyMoodGood => 'good dream';
+  @override
+  String get dailyFactorStress => 'stress';
+  @override
+  String get dailyFactorCaffeine => 'caffeine';
+  @override
+  String get dailyFactorsSeparator => ' / ';
+  @override
+  String dailyScoreValue(int score) => '$score points';
+  @override
+  String dailyFeedbackSummary(String mood, String score, String factors) =>
+      'score=$score; factors=$factors; mood=$mood';
+}
+
+class _DailyResourcesDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _DailyResourcesDelegate();
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'zh';
+  @override
+  Future<AppLocalizations> load(Locale locale) =>
+      SynchronousFuture(_DailyResources());
+  @override
+  bool shouldReload(_DailyResourcesDelegate old) => false;
 }

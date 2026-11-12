@@ -1,3 +1,5 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
+
 /// An immutable record of one day's dream.
 ///
 /// Domain objects describe the application's meaning without knowing anything
@@ -11,6 +13,7 @@ class DreamEntry {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
+    this.feedback = const DailyFeedback(),
   });
 
   /// Stable identifier of this record.
@@ -31,6 +34,9 @@ class DreamEntry {
   /// whether an entry is empty.
   final String content;
 
+  final DailyFeedback feedback;
+  bool get hasData => content.trim().isNotEmpty || feedback.hasData;
+
   /// UTC instant at which the record was first created.
   final DateTime createdAt;
 
@@ -45,6 +51,7 @@ class DreamEntry {
     String? id,
     DateTime? dreamDate,
     String? content,
+    DailyFeedback? feedback,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -52,6 +59,7 @@ class DreamEntry {
       id: id ?? this.id,
       dreamDate: dreamDate ?? this.dreamDate,
       content: content ?? this.content,
+      feedback: feedback ?? this.feedback,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-11。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-12。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -17,6 +17,9 @@
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
 
 ## 2. 代码与交付基线
+
+- 2026-11-12 每日记录升级基于 `0c3a00a`，本地功能提交 `a5c037c`。开发阶段按用户要求仅本地测试并打开 iOS 模拟器；用户同日确认“ok，没问题”，授权上传 GitHub 并完成文字库收尾。新增分类、正文、可空评分、因素与结束页；说明见 [每日记录](DAILY_RECORD_GUIDE.md)。本次记录为 iOS 模拟器用户验收通过，不扩展为 Android 或真机验收。
+- 验收后复核文字库共 143 条，补齐因素分隔符、移除未使用摘要键并添加资源注入回归；完整 214 项测试、格式与静态分析通过。两次命令行 fetch 分别遇到 HTTP/2 错误和 HTTP/1.1 连接超时，已用授权 GitHub 连接器确认远程主线仍为 `0c3a00a`；本次沿用连接器直接同步 [main](https://github.com/cyrusz2768-panda/Morpheus-App/tree/main)，不创建 PR，不声称命令行 push 成功。发布前核对父提交，发布后核对文件树和 GitHub Actions，实际结果见本轮交付回复。
 
 - 本轮本地功能提交 `88ac881`；命令行 `git push origin main` 因缺少 GitHub HTTPS 登录失败，按仓库已有授权改用 GitHub 连接器同步同一文件树，不创建 PR。发布前已确认远程 main 仍为 `12703ac`，远程父提交、文件树及 CI 以实际交付核验结果为准。
 
@@ -39,9 +42,9 @@
 | 功能 | 实际行为与主要入口 |
 |---|---|
 | 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/statistics`、`/calendar`、`/calendar-picker`、`/reminders` |
-| 梦境编辑 | 每天一条，多行正文，800ms 自动保存；`lib/features/dream_editor/` |
+| 梦境编辑 | 每天一条，分类／正文／主观评分／因素引导、结束回顾，800ms 自动保存；`lib/features/dream_editor/` |
 | 草稿保护 | 串行保存、切日/导航前 flush、后台尽力提交；读失败禁用编辑，保存失败保留文字并重试 |
-| 本地数据库 | Drift / SQLite，版本 1，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
+| 本地数据库 | Drift / SQLite，版本 2，v1 追加列保留旧数据，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
 | 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
@@ -52,10 +55,10 @@
 | 每日提醒 | 分组卡片、独立消息通知开关、开启后展开时间、可延后授权与按需系统设置、点击回当天；`lib/features/reminders/` |
 | 每周统计回顾 | 默认关闭、周日 21:00，独立星期/时间与开关；点击打开最新自然周，见 [回顾通知说明](WEEKLY_REVIEW_GUIDE.md) |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 112 条中文 ARB，含统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 143 条中文 ARB，含每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
-存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白由编辑流程删除。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
+存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白视为无正文；状态或睡眠反馈独立保留，无正文反馈也进入历史与月历。仅有完成标记的全跳过日期不展示历史圆点。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
 
 当前身份为练习占位 `com.example.morpheus`，iOS 工程最低 15.0，Android SDK 基线沿用 Flutter 模板。正式发行身份、支持系统范围、证书和签名需单独确定。
 
@@ -63,6 +66,11 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-12，`a5c037c` 上的验收后文字库收尾 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，214 项；143 条 ARB 无重复键、语境说明齐全，新增注入资源验证状态／因素名、分隔符、评分与摘要句式。不改中文显示，未重复双端构建或操作模拟器，沿用下列同日功能构建结果 |
+| 2026-11-12，`a5c037c` | 用户确认“ok，没问题，上传github吧，然后合并新加入的文字到文字库” | 每日记录 iOS 模拟器用户验收通过，并授权双端源码及文字库同步主线；未新增逐项操作清单，不扩展 Android 或真机验收 |
+| 2026-11-12，`0c3a00a` 上的每日记录工作区 | `flutter --no-version-check pub get`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，213 项；覆盖 v1 文件无损升级、无正文反馈重开与历史/月历、评分约束、全部跳过完成恢复、串行写入、失败保护、步骤与切日竞态、窄屏大字号；生成文件不提交 |
+| 2026-11-12，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端通过（Gradle 34.0 秒、Xcode 24.3 秒）；Android 未启动或人工验收，iOS 启动另记 |
+| 2026-11-12，同上 | `flutter --no-version-check devices`、`flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当次实际 iOS 设备）及窗口检查 | 原 iPhone 18 Pro／iOS 27.2 保留数据升级启动，Dart VM 已连接，实际显示当天分类问题、四选项及底部跳过，页面已留给用户验收。本轮未在模拟器填写反馈、手工走完流程或验证系统通知点击，不标记最终用户验收或真机验证 |
 | 2026-11-11，同一验收工作区 | 用户明确确认“好的，验收通过”，授权双端源码及文字库上传 GitHub | 统计回顾通知与设置卡片的 iOS 模拟器用户验收通过；未提供额外逐项清单，不扩展为 Android 或真机验收 |
 | 2026-11-11，`12703ac` 上的回顾通知与卡片调整工作区 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，196 项；新增/调整卡片展开与折叠、移除旧入口、时间保留、保存失败保持展开、权限拒绝补救和窄屏大字号交互。中文资源当前 112 条；未提交或推送 |
 | 2026-11-11，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端通过（Gradle 47.3 秒、Xcode 41.2 秒）；Android 本轮未启动模拟器或人工验收 |
@@ -105,7 +113,7 @@ M1 原计划的逐项审计：
 ## 5. 已知边界与待办
 
 - 统计与底栏已由用户在 iPhone 18 Pro 模拟器验收通过，按约定补齐 31 条新增文案及资源接线；本轮延后同步的临时例外已收尾，后续仍默认随功能维护 ARB。
-- 当前无好梦／噩梦记录字段，统计首版省略该板块；周末仅指周六／周日，不含法定调休。
+- 已有好梦／噩梦等状态和睡眠反馈字段，本轮统计仍按非空正文计天，分类比例／评分／因素统计后续开发；周末仅指周六／周日，不含法定调休。
 
 优先收尾：
 

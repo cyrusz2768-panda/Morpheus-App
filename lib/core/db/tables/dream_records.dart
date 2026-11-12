@@ -23,6 +23,15 @@ class DreamRecords extends Table {
   IntColumn get createdAtMillis => integer()();
   IntColumn get updatedAtMillis => integer()();
 
+  /// v2 新列全部允许未填写。旧记录迁移后不会被推断为某种梦或 0 分。
+  TextColumn get dreamMood => text().nullable()();
+  IntColumn get sleepScore => integer().nullable().customConstraint(
+    'CHECK (sleep_score BETWEEN 1 AND 5)',
+  )();
+  TextColumn get sleepFactors => text().nullable()();
+  BoolColumn get flowCompleted =>
+      boolean().withDefault(const Constant(false))();
+
   /// 主键由数据库强制唯一，而不只靠 Dart 代码“先检查有没有”。
   /// 即使同一天发生重复写入，SQLite 也不会产生两条相同日期的记录。
   @override

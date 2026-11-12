@@ -13,7 +13,10 @@ class MainBottomNavigation extends ConsumerWidget {
   static const _paths = ['/', '/statistics', '/calendar'];
 
   Future<void> _select(BuildContext context, WidgetRef ref, int index) async {
-    if (index == selectedIndex) return;
+    if (index == selectedIndex ||
+        ref.read(dreamEditorControllerProvider).isAdvancing) {
+      return;
+    }
     final activity = ref.read(navigationActivityProvider.notifier);
     final token = activity.begin();
     if (token == null) return;
@@ -47,7 +50,9 @@ class MainBottomNavigation extends ConsumerWidget {
     final busy =
         ref.read(navigationActivityProvider.notifier).isBusy ||
         ref.watch(
-          dreamEditorControllerProvider.select((state) => state.isLoading),
+          dreamEditorControllerProvider.select(
+            (state) => state.isLoading || state.isAdvancing,
+          ),
         );
     final colors = Theme.of(context).colorScheme;
     return SafeArea(

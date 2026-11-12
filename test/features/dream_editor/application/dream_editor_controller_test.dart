@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -438,6 +439,7 @@ class _ScriptedRepository implements DreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     saveAttempts.add(content);
     saveDates.add(DreamEntry.dateOnly(date));
@@ -456,7 +458,11 @@ class _ScriptedRepository implements DreamRepository {
         savesToFail -= 1;
         throw StateError('测试用写入故障');
       }
-      return await storage.save(date: date, content: content);
+      return await storage.save(
+        date: date,
+        content: content,
+        feedback: feedback,
+      );
     } finally {
       _activeWrites -= 1;
     }

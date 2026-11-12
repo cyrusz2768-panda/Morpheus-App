@@ -16,7 +16,7 @@
 
 底部实色圆角导航提供「记录、统计、日历」，沿用现有紫色主题，不使用液态玻璃。记录页原有搜索、历史、菜单及快捷选日仍可使用；快捷选日继续作为全屏选择器。底栏日历点选日期后回到原编辑器查看或补记。Android 系统返回从统计／日历回记录。
 
-`IStatisticsRepository` → `DriftStatisticsRepository` 查询既有 `dream_records` 的日期投影；`statisticsDatesProvider` 管理订阅，`DreamStatistics` 聚合，页面只渲染数据。查询范围为本期加上期，正文仅在仓库内用于过滤历史空白行，不向统计页传递正文。沿用数据库版本 1，无新表、依赖或持久化统计缓存。
+`IStatisticsRepository` → `DriftStatisticsRepository` 查询既有 `dream_records` 的日期投影；`statisticsDatesProvider` 管理订阅，`DreamStatistics` 聚合，页面只渲染数据。查询范围为本期加上期，正文仅在仓库内用于过滤历史空白行，不向统计页传递正文。2026-11-12 每日记录将数据库升到版本 2；本统计查询仍只按非空正文计天，无正文的反馈不会改变当前统计，不新增统计缓存。
 
 底栏、顶栏与日历选日共用导航令牌。离开记录前 unfocus，再循环等待最新草稿落盘；保存失败留在原页保留输入。每日提醒回当天、每周回顾去点击时所在周，均会撤销旧导航意图并持有锁，避免旧 Future 完成后抢回页面。二级搜索／历史／提醒设置保持原来的 push/pop 返回流程。
 

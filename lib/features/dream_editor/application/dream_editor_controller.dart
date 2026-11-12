@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -162,6 +163,14 @@ class DreamEditorController extends Notifier<DreamEditorState> {
       state = DreamEditorState(
         date: normalizedDate,
         content: entry?.content ?? '',
+        feedback: entry?.feedback ?? const DailyFeedback(),
+        // 历史记录直接查看；当天未完成的流程重新从分类开始，正文始终保留。
+        step:
+            entry != null &&
+                (entry.feedback.completed ||
+                    normalizedDate != DreamEntry.dateOnly(DateTime.now()))
+            ? DailyRecordStep.summary
+            : DailyRecordStep.mood,
         isLoading: false,
       );
       return true;
@@ -201,6 +210,57 @@ class DreamEditorController extends Notifier<DreamEditorState> {
     _saveTimer = Timer(_saveDelay, saveNow);
   }
 
+  /// 所有反馈共用正文的串行队列；写入中修改反馈也会生成下一份快照。
+  void feedbackChanged(DailyFeedback feedback) {
+    if (!ref.mounted || !state.canEdit) return;
+    state = state.copyWith(
+      feedback: feedback,
+      saveStatus: DreamSaveStatus.unsaved,
+      clearError: true,
+    );
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDelay, saveNow);
+  }
+
+  /// 步骤导航也必须等待磁盘确认。失败留在原步骤，重试始终写当前草稿。
+  /// isAdvancing 防止连点；IO 期间正文仍可接收输入法最后一段回调并排队保存。
+  Future<void> moveTo(DailyRecordStep step, {DailyFeedback? feedback}) async {
+    if (!ref.mounted || !state.canEdit || state.isAdvancing) return;
+    final date = state.date;
+    final request = _loadRequest;
+    state = state.copyWith(isAdvancing: true);
+    try {
+      if (feedback != null) feedbackChanged(feedback);
+      if (!await flushPendingSave() || !ref.mounted) return;
+      // 系统通知可抢占页面导航；旧日期的异步续体不能推进新日期的步骤。
+      if (state.date != date || _loadRequest != request || state.isLoading) {
+        return;
+      }
+      state = state.copyWith(step: step);
+    } finally {
+      if (ref.mounted && _loadRequest == request) {
+        state = state.copyWith(isAdvancing: false);
+      }
+    }
+  }
+
+  Future<void> chooseMood(DreamMood? mood) => moveTo(
+    mood == DreamMood.forgotten || mood == DreamMood.noDream
+        ? DailyRecordStep.score
+        : DailyRecordStep.content,
+    feedback: mood == null ? null : state.feedback.copyWith(mood: mood),
+  );
+
+  Future<void> chooseScore(int score) => moveTo(
+    DailyRecordStep.factors,
+    feedback: state.feedback.copyWith(sleepScore: score),
+  );
+
+  Future<void> finishRecord() => moveTo(
+    DailyRecordStep.summary,
+    feedback: state.feedback.copyWith(completed: true),
+  );
+
   /// Immediately persists the latest content.
   ///
   /// If a save is already running, a second request is remembered and executed
@@ -233,6 +293,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         _anotherSaveRequested = false;
         final contentToSave = state.content;
         final dateToSave = state.date;
+        final feedbackToSave = state.feedback;
 
         state = state.copyWith(
           saveStatus: DreamSaveStatus.saving,
@@ -240,10 +301,16 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         );
 
         final repository = ref.read(dreamRepositoryProvider);
-        if (contentToSave.trim().isEmpty) {
+        if (contentToSave.trim().isEmpty &&
+            !feedbackToSave.hasData &&
+            !feedbackToSave.completed) {
           await repository.deleteByDate(dateToSave);
         } else {
-          await repository.save(date: dateToSave, content: contentToSave);
+          await repository.save(
+            date: dateToSave,
+            content: contentToSave,
+            feedback: feedbackToSave,
+          );
         }
 
         if (!ref.mounted) {
@@ -252,7 +319,8 @@ class DreamEditorController extends Notifier<DreamEditorState> {
 
         // If the user typed while the write was running, keep "unsaved" and
         // loop again with the newer content.
-        if (state.content != contentToSave) {
+        if (state.content != contentToSave ||
+            !identical(state.feedback, feedbackToSave)) {
           _anotherSaveRequested = true;
           state = state.copyWith(saveStatus: DreamSaveStatus.unsaved);
         } else {

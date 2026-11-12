@@ -1,5 +1,21 @@
 # 开发日志
 
+## 2026-11-12
+
+- 用户在 `a5c037c` 的每日记录功能交付后明确确认“ok，没问题”，授权上传 GitHub 并完成新增文字库收尾；记录为本轮 iOS 模拟器用户验收通过，不扩展为 Android／真机验收。以下本日“先不上传”记录是验收前阶段，已被本次授权覆盖。
+- 验收后复核新增文案：全部用户可见标题、选项、按钮、动态评分、未填写与历史整句摘要均走 ARB，补齐多项因素分隔符并移除未使用摘要资源；当前 143 条，无重复键且语境说明齐全，中文显示保持不变。新增资源注入回归，验证名称、标点、动态分数及摘要可由资源提供。
+- 2026-11-12 在 `a5c037c` 上实际执行 `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`，全部通过，214 项。仅文案接线和文档收尾，未重复双端构建、未重新操作模拟器，沿用本日下列功能构建与用户验收证据。
+- 发布前 `git fetch origin` 遇到 HTTP/2 错误，`git -c http.version=HTTP/1.1 fetch origin` 连接超时；授权 GitHub 连接器确认远程 main 仍为 `0c3a00a`。本次沿用连接器直接同步同一已验证文件树到主线，不创建 PR，不索要凭据；本地原提交保留在备份分支，远程父提交、文件树及 CI 在交付时核验，不将连接器发布说成命令行 push 成功。
+
+- 基于 `0c3a00a` 开发每日记录升级，起始工作区干净，fetch 确认与 `origin/main` 一致。用户明确要求本轮不上传 GitHub，双端测试后只打开 iOS 模拟器供验收；统计升级留后续。
+- Android／iOS 共用分类 → 正文 → 1–5 分主观评分 → 因素多选 → 结束回顾流程，支持各步跳过及返回修改。旧正文切换状态前保存并仅收起，睡眠评分未填保持 null，与好梦／噩梦独立。
+- 数据库升至 v2，追加可空反馈及完成标记，保留 v1 原文、日期、UTC 时间。无正文但有状态／评分／因素的日期可从历史和日历找回；全跳过只保存完成标记，不进入历史圆点。统计仍只按非空正文计天。
+- 新增中文教学注释、同步 ARB 与每日记录指南；修正当前状态、历史/月历/统计及 M1 指南中的过时存储说明。正文与反馈共用串行写入、800ms 防抖、导航等待与失败重试；增加步骤保存与通知切日隔离。
+- 2026-11-12 实际执行 `flutter --no-version-check pub get`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`，全部通过，213 项。新增真实 v1 临时文件迁移、反馈重开与查询、完成恢复、评分约束、串行/并发保存、状态切换、跳过路径、历史回访、切日竞态与窄屏大字号回归。
+- 双端调试构建通过：`flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`（Gradle 34.0 秒）、`flutter --no-version-check build ios --simulator --debug --no-pub`（Xcode 24.3 秒）。Android 本轮未启动模拟器或人工验收；iOS 安装启动与用户验收分别记录，不把构建或自动测试视作人工验收。
+- 原 iPhone 18 Pro／iOS 27.2 已保留数据升级安装，实际运行 `flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定当前设备），Dart VM 连接成功。Device Hub 实际显示当天“你昨晚做了什么梦？”、四分类及底部跳过，窗口留给用户验收；未填写模拟器反馈或手工完成其余步骤，也未测试实际通知送达／点击。未上传 GitHub。
+
+
 ## 2026-11-11
 
 - 本地功能提交 `88ac881`。推送前 fetch 与连接器均确认远程 main 为 `12703ac`，没有远程新增提交；实际命令 `GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 push origin main` 因缺少 GitHub HTTPS 登录失败。按本会话与仓库已有授权，改用 GitHub 连接器提交同一文件树；不索取凭据，不创建 PR，不将命令行 push 记录为成功。远程父提交、内容与 CI 在交付时核验。

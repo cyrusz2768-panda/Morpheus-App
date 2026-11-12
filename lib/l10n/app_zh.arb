@@ -611,5 +611,146 @@
         "type": "int"
       }
     }
+  },
+  "dailyMoodQuestion": "你昨晚做了什么梦？",
+  "@dailyMoodQuestion": {
+    "description": "每日记录第一步标题，归属醒来当天"
+  },
+  "dailyMoodGood": "好梦",
+  "@dailyMoodGood": {
+    "description": "梦境状态选项"
+  },
+  "dailyMoodNightmare": "噩梦",
+  "@dailyMoodNightmare": {
+    "description": "梦境状态选项"
+  },
+  "dailyMoodForgotten": "没记住",
+  "@dailyMoodForgotten": {
+    "description": "梦境状态选项"
+  },
+  "dailyMoodNoDream": "没做梦",
+  "@dailyMoodNoDream": {
+    "description": "梦境状态选项"
+  },
+  "dailySkip": "跳过",
+  "@dailySkip": {
+    "description": "每日记录各步骤底部浅色文字按钮，不清空已填数据"
+  },
+  "dailyContinue": "继续",
+  "@dailyContinue": {
+    "description": "正文完成后前往睡眠评分"
+  },
+  "dailyFinish": "完成",
+  "@dailyFinish": {
+    "description": "提交影响因素并显示完成页"
+  },
+  "dailyScoreQuestion": "你可以给昨晚的睡眠打多少分？",
+  "@dailyScoreQuestion": {
+    "description": "睡眠主观评分问题，范围为1至5分"
+  },
+  "dailyFactorsQuestion": "你认为对你睡眠影响较大的因素有哪些？",
+  "@dailyFactorsQuestion": {
+    "description": "睡眠主观反馈多选问题"
+  },
+  "dailyFarewell": "夜行世界的探险暂时告一段落，今天也在现实世界中加油吧，我们今晚再见。",
+  "@dailyFarewell": {
+    "description": "当日流程结束页文案"
+  },
+  "dailyMoodLabel": "梦境状态",
+  "@dailyMoodLabel": {
+    "description": "完成页状态摘要标题及修改入口"
+  },
+  "dailyScoreLabel": "睡眠自评",
+  "@dailyScoreLabel": {
+    "description": "完成页评分标题及修改入口"
+  },
+  "dailyFactorsLabel": "影响因素",
+  "@dailyFactorsLabel": {
+    "description": "完成页因素标题及修改入口"
+  },
+  "dailyUnfilled": "未填写",
+  "@dailyUnfilled": {
+    "description": "跳过或旧数据没有反馈，不能展示为0分"
+  },
+  "dailyEdit": "修改",
+  "@dailyEdit": {
+    "description": "重新打开相应反馈问题"
+  },
+  "dailyEditDream": "编辑梦境",
+  "@dailyEditDream": {
+    "description": "完成页进入正文编辑"
+  },
+  "dailyHiddenDream": "已保存的梦境正文",
+  "@dailyHiddenDream": {
+    "description": "状态为没记住或没做梦时的正文折叠入口"
+  },
+  "dailyFactorStress": "压力",
+  "@dailyFactorStress": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorEmotion": "情绪",
+  "@dailyFactorEmotion": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorNews": "时事",
+  "@dailyFactorNews": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorTravel": "旅行",
+  "@dailyFactorTravel": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorScreen": "睡前屏幕",
+  "@dailyFactorScreen": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorCaffeine": "咖啡因",
+  "@dailyFactorCaffeine": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorSchedule": "作息变化",
+  "@dailyFactorSchedule": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorEnvironment": "环境",
+  "@dailyFactorEnvironment": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorHealth": "身体健康",
+  "@dailyFactorHealth": {
+    "description": "睡眠影响因素"
+  },
+  "dailyFactorUnsure": "不确定",
+  "@dailyFactorUnsure": {
+    "description": "睡眠影响因素"
+  },
+  "dailyScoreValue": "{score} 分",
+  "@dailyScoreValue": {
+    "description": "睡眠自评的分数，只有填写时显示",
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "dailyFeedbackSummary": "{mood} · 睡眠自评：{score} · 影响因素：{factors}",
+  "@dailyFeedbackSummary": {
+    "description": "无正文的历史记录摘要，未填显示未填写",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      },
+      "factors": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyFactorsSeparator": "、",
+  "@dailyFactorsSeparator": {
+    "description": "完成页及历史摘要中，多项已选睡眠影响因素之间的分隔符；可按语言习惯调整，不用于存储标识"
   }
 }

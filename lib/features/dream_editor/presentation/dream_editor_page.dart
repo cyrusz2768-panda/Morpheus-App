@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/presentation/widgets/daily_record_flow.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -292,7 +293,9 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
   Widget build(BuildContext context) {
     ref.watch(navigationActivityProvider);
     final navigationBusy =
-        _isNavigating || ref.read(navigationActivityProvider.notifier).isBusy;
+        _isNavigating ||
+        ref.read(navigationActivityProvider.notifier).isBusy ||
+        ref.watch(dreamEditorControllerProvider).isAdvancing;
     final editorState = ref.watch(dreamEditorControllerProvider);
     final reminderState = ref.watch(reminderControllerProvider);
     _queueMenuHint(reminderState);
@@ -370,11 +373,10 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
               ? const Center(child: CircularProgressIndicator())
               : _EditorBody(
                   state: editorState,
+                  controller: ref.read(dreamEditorControllerProvider.notifier),
+                  navigationBusy: navigationBusy,
                   textController: _textController,
                   onBackToToday: navigationBusy ? null : _backToToday,
-                  onChanged: ref
-                      .read(dreamEditorControllerProvider.notifier)
-                      .contentChanged,
                   onRetry: () {
                     unawaited(
                       ref
@@ -396,16 +398,18 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
 class _EditorBody extends StatelessWidget {
   const _EditorBody({
     required this.state,
+    required this.controller,
+    required this.navigationBusy,
     required this.textController,
     required this.onBackToToday,
-    required this.onChanged,
     required this.onRetry,
   });
 
   final DreamEditorState state;
+  final DreamEditorController controller;
+  final bool navigationBusy;
   final TextEditingController textController;
   final VoidCallback? onBackToToday;
-  final ValueChanged<String> onChanged;
   final VoidCallback onRetry;
 
   @override
@@ -444,22 +448,11 @@ class _EditorBody extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Expanded(
-          child: TextField(
-            key: const Key('dream-content-field'),
-            controller: textController,
-            // 读取失败时显示错误和重试入口，但不允许把空白界面当作新草稿。
-            // 保存失败则继续允许编辑：Controller 会保留并重试最新文字。
-            enabled: state.canEdit,
-            onChanged: onChanged,
-            expands: true,
-            minLines: null,
-            maxLines: null,
-            textAlignVertical: TextAlignVertical.top,
-            keyboardType: TextInputType.multiline,
-            decoration: InputDecoration(
-              labelText: context.l10n.dreamContentLabel,
-              hintText: context.l10n.dreamContentHint,
-            ),
+          child: DailyRecordFlow(
+            state: state,
+            controller: controller,
+            textController: textController,
+            navigationBusy: navigationBusy,
           ),
         ),
         const SizedBox(height: 12),

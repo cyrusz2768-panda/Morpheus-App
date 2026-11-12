@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:drift/drift.dart';
 import 'package:morpheus/core/db/app_database.dart';
 import 'package:morpheus/features/dream_editor/data/dream_repository.dart';
@@ -29,16 +31,16 @@ class DriftDreamRepository implements DreamRepository {
   Future<List<DreamEntry>> getAll() async {
     // 日期统一保存为 yyyy-mm-dd，所以 SQL 文本降序就是日历日期降序。
     // 排序放在查询层完成，页面无需重复排序，也不会把“最近修改的旧梦境”
-    // 错当成“最近日期的梦境”。当前沿用原表，不需要数据库迁移或清空数据。
+    // 错当成“最近日期的梦境”。v2 仍沿用同一日期主键。
     final query = _database.select(_database.dreamRecords)
       ..orderBy([(table) => OrderingTerm.desc(table.dreamDate)]);
     final rows = await query.get();
 
-    // 正常写入已经拒绝纯空白；这里仍防御性过滤旧版本或外部导入的空记录。
+    // 仅有完成标记的日期不作为历史反馈，旧版本空白行同样过滤。
     // Dart trim 能处理换行、制表符等空白，比 SQLite 默认 TRIM 的空格规则完整。
     // 返回只读快照；编辑和删除必须通过对应 Repository 方法真正写入数据库。
     return List<DreamEntry>.unmodifiable(
-      rows.where((row) => row.content.trim().isNotEmpty).map(_toDomain),
+      rows.map(_toDomain).where((entry) => entry.hasData),
     );
   }
 
@@ -46,14 +48,10 @@ class DriftDreamRepository implements DreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
-    // trim 只用来判断“有没有正文”，不把 trim 后的文字保存回去。
-    // 清空文本的情形由 Controller 调用 deleteByDate；直接误用 save 时应报错，
-    // 而不是创建一条无意义的空梦境记录。
-    if (content.trim().isEmpty) {
-      throw ArgumentError.value(content, 'content', '正文不能为空白，请使用删除操作');
-    }
-
+    // 省略 feedback 的旧调用只修改正文，保留当天已有反馈。
+    // Controller 提交完整快照，确保清空正文不会连带删除评分和状态。
     final key = DreamEntry.dateKey(date);
     final nowMillis = _now().toUtc().millisecondsSinceEpoch;
 
@@ -61,18 +59,40 @@ class DriftDreamRepository implements DreamRepository {
     // DoUpdate 生成 INSERT ... ON CONFLICT DO UPDATE：同一天更新正文和
     // updatedAtMillis，但绝不覆盖第一次写入的 createdAtMillis。
     return _database.transaction(() async {
+      final savedFeedback =
+          feedback ??
+          (await getByDate(date))?.feedback ??
+          const DailyFeedback();
+      if (content.trim().isEmpty &&
+          !savedFeedback.hasData &&
+          !savedFeedback.completed) {
+        throw ArgumentError('记录没有正文或反馈，请使用删除操作');
+      }
+
       await _database
           .into(_database.dreamRecords)
           .insert(
             DreamRecordsCompanion.insert(
               dreamDate: key,
               content: content,
+              dreamMood: Value(savedFeedback.mood?.name),
+              sleepScore: Value(savedFeedback.sleepScore),
+              sleepFactors: Value(
+                jsonEncode(savedFeedback.factors.map((e) => e.name).toList()),
+              ),
+              flowCompleted: Value(savedFeedback.completed),
               createdAtMillis: nowMillis,
               updatedAtMillis: nowMillis,
             ),
             onConflict: DoUpdate(
               (_) => DreamRecordsCompanion(
                 content: Value(content),
+                dreamMood: Value(savedFeedback.mood?.name),
+                sleepScore: Value(savedFeedback.sleepScore),
+                sleepFactors: Value(
+                  jsonEncode(savedFeedback.factors.map((e) => e.name).toList()),
+                ),
+                flowCompleted: Value(savedFeedback.completed),
                 updatedAtMillis: Value(nowMillis),
               ),
               target: [_database.dreamRecords.dreamDate],
@@ -101,6 +121,19 @@ class DriftDreamRepository implements DreamRepository {
       id: row.dreamDate,
       dreamDate: DateTime.parse(row.dreamDate),
       content: row.content,
+      feedback: DailyFeedback(
+        mood: DreamMood.values
+            .where((e) => e.name == row.dreamMood)
+            .firstOrNull,
+        sleepScore: row.sleepScore,
+        factors: Set.unmodifiable(
+          SleepFactor.values.where(
+            (e) =>
+                (jsonDecode(row.sleepFactors ?? '[]') as List).contains(e.name),
+          ),
+        ),
+        completed: row.flowCompleted,
+      ),
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         row.createdAtMillis,
         isUtc: true,

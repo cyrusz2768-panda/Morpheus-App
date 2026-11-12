@@ -1,3 +1,7 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
+
+enum DailyRecordStep { mood, content, score, factors, summary }
+
 /// High-level status of the current editor save operation.
 enum DreamSaveStatus {
   /// No edits are waiting to be saved.
@@ -30,6 +34,9 @@ class DreamEditorState {
   const DreamEditorState({
     required this.date,
     this.content = '',
+    this.feedback = const DailyFeedback(),
+    this.step = DailyRecordStep.mood,
+    this.isAdvancing = false,
     this.isLoading = true,
     this.saveStatus = DreamSaveStatus.idle,
     this.errorMessage,
@@ -38,6 +45,9 @@ class DreamEditorState {
 
   final DateTime date;
   final String content;
+  final DailyFeedback feedback;
+  final DailyRecordStep step;
+  final bool isAdvancing;
   final bool isLoading;
   final DreamSaveStatus saveStatus;
   final String? errorMessage;
@@ -58,6 +68,9 @@ class DreamEditorState {
   DreamEditorState copyWith({
     DateTime? date,
     String? content,
+    DailyFeedback? feedback,
+    DailyRecordStep? step,
+    bool? isAdvancing,
     bool? isLoading,
     DreamSaveStatus? saveStatus,
     String? errorMessage,
@@ -67,6 +80,9 @@ class DreamEditorState {
     return DreamEditorState(
       date: date ?? this.date,
       content: content ?? this.content,
+      feedback: feedback ?? this.feedback,
+      step: step ?? this.step,
+      isAdvancing: isAdvancing ?? this.isAdvancing,
       isLoading: isLoading ?? this.isLoading,
       saveStatus: saveStatus ?? this.saveStatus,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,

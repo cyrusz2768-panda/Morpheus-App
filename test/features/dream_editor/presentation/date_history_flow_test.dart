@@ -1,3 +1,5 @@
+import '../../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,11 +41,13 @@ void main() {
 
     await tester.tap(yesterdayRow);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text(_displayDate(yesterday)), findsOneWidget);
     expect(_editorText(tester), '昨天梦见一片海');
 
     await tester.tap(find.byKey(const Key('back-to-today-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text(_displayDate(today)), findsOneWidget);
     expect(_editorText(tester), '今天梦见一座山');
   });
@@ -66,6 +70,7 @@ void main() {
     expect((await repository.getByDate(today))?.content, draft);
 
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byKey(_historyKey(today)), findsOneWidget);
     expect(find.text(draft), findsOneWidget);
   });
@@ -97,6 +102,7 @@ void main() {
     const lastInput = '输入法刚刚交付的最后一段梦境';
     field.onChanged!(lastInput);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect((await repository.getByDate(DateTime.now()))?.content, lastInput);
     expect(find.text(lastInput), findsOneWidget);
@@ -114,6 +120,7 @@ void main() {
     expect(find.text('读取历史梦境失败，请重试。'), findsOneWidget);
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.byKey(_historyKey(yesterday)), findsOneWidget);
     expect(find.text('读取历史梦境失败，请重试。'), findsNothing);
@@ -130,6 +137,7 @@ void main() {
     await _openHistory(tester);
     await tester.tap(find.byKey(_historyKey(yesterday)));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     await tester.enterText(find.byKey(const Key('dream-content-field')), '');
     // 直接打开历史，既验证“离开编辑页前处理删除”，也验证列表会重新查询，
@@ -150,16 +158,20 @@ void main() {
 
     await tester.tap(find.byKey(const Key('select-date-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('calendar-jump-date-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.byType(DatePickerDialog), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.byType(DatePickerDialog), findsNothing);
     // 取消快速选择只关闭选择器，继续留在月历；返回后原日期和正文保持。
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text(_displayDate(today)), findsOneWidget);
     expect(_editorText(tester), draft);
   });
@@ -174,8 +186,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('select-date-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('calendar-jump-date-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     final calendar = tester.widget<CalendarDatePicker>(
       find.byType(CalendarDatePicker),
     );
@@ -188,6 +202,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('确定'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.byType(DatePickerDialog), findsNothing);
     expect(find.text(_displayDate(yesterday)), findsOneWidget);
@@ -203,6 +218,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('open-history-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.byKey(const Key('dream-content-field')), findsOneWidget);
     expect(_editorText(tester), draft);
@@ -211,6 +227,7 @@ void main() {
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('已保存'), findsOneWidget);
     expect((await repository.getByDate(DateTime.now()))?.content, draft);
     await _openHistory(tester);
@@ -240,6 +257,7 @@ Future<void> _showApp(
     ),
   );
   await tester.pumpAndSettle();
+  await openDreamTextIfPrompted(tester);
   addTearDown(() async {
     // 主动卸载 ProviderScope，让路由监听器和防抖 Timer 按应用生命周期释放。
     await tester.pumpWidget(const SizedBox.shrink());
@@ -250,6 +268,7 @@ Future<void> _showApp(
 Future<void> _openHistory(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('open-history-button')));
   await tester.pumpAndSettle();
+  await openDreamTextIfPrompted(tester);
 }
 
 String _editorText(WidgetTester tester) {
@@ -290,12 +309,13 @@ class _HistoryRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (saveFailures > 0) {
       saveFailures -= 1;
       throw StateError('测试用保存故障');
     }
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }
 

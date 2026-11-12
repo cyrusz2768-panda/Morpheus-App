@@ -21,14 +21,21 @@ class AppDatabase extends _$AppDatabase {
   /// SQL / Repository 逻辑，而不依赖模拟器、path_provider 或用户的真实数据。
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
-  /// 当前第一版数据库结构。将来增加列时需要升级版本并编写迁移，不能通过
-  /// 删除数据库来“解决”升级问题，否则真实用户保存的梦境就会丢失。
+  /// v2 在原表追加反馈列；日期、原文与时间戳原样保留，不删除或重建用户数据。
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// 第一次打开空数据库时执行建表；已经存在的同版本文件不会被清空。
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(dreamRecords, dreamRecords.dreamMood);
+        await migrator.addColumn(dreamRecords, dreamRecords.sleepScore);
+        await migrator.addColumn(dreamRecords, dreamRecords.sleepFactors);
+        await migrator.addColumn(dreamRecords, dreamRecords.flowCompleted);
+      }
+    },
     onCreate: (migrator) async {
       await migrator.createAll();
     },

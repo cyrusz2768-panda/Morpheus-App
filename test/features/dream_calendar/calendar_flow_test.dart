@@ -1,3 +1,5 @@
+import '../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,11 +43,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> openCalendar(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('select-date-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> selectDay(WidgetTester tester, DateTime date) async {
@@ -53,6 +57,7 @@ void main() {
     await tester.ensureVisible(day);
     await tester.tap(day);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   String content(WidgetTester tester) => tester
@@ -125,15 +130,18 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(january);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openCalendar(tester);
     expect(marker(january), findsOneWidget);
     expect(marker(december), findsNothing);
     await tester.tap(find.byKey(const Key('calendar-previous-month')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(marker(december), findsOneWidget);
     expect(marker(january), findsNothing);
     await tester.tap(find.byKey(const Key('calendar-today-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     final today = DateTime.now();
     expect(
       find.byKey(Key('calendar-day-${DreamEntry.dateKey(today)}')),
@@ -152,6 +160,7 @@ void main() {
     calendarButton.onPressed!();
     field.onChanged!('输入法刚交付的测试草稿');
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(
       (await repository.getByDate(DateTime.now()))!.content,
       '输入法刚交付的测试草稿',
@@ -171,6 +180,7 @@ void main() {
     expect(content(tester), '保存失败时保留的测试草稿');
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openCalendar(tester);
     expect(marker(DateTime.now()), findsOneWidget);
   });
@@ -185,9 +195,11 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(yesterday);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openCalendar(tester);
     notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('梦境月历'), findsNothing);
     expect(container.read(dreamEditorControllerProvider).date, today);
     expect(content(tester), '通知返回的当天测试内容');
@@ -202,12 +214,13 @@ class _CalendarDreamRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (saveFailures > 0) {
       saveFailures--;
       throw StateError('Scripted calendar navigation save failure');
     }
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }
 

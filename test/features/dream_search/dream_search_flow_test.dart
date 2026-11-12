@@ -1,3 +1,5 @@
+import '../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'dart:async';
 
@@ -49,6 +51,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
@@ -58,6 +61,7 @@ void main() {
   Future<void> openSearch(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('open-search-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   Future<void> query(WidgetTester tester, String term) async {
@@ -80,6 +84,7 @@ void main() {
     await tester.pump();
     expect((await editor.getByDate(today))!.content, '今天的海边新草稿');
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
     expect(tester.testTextInput.isVisible, isTrue);
     expect(search.calls, isEmpty);
@@ -92,10 +97,12 @@ void main() {
     );
     await tester.tap(result(yesterday));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(editorContent(tester), original);
     expect(container.read(dreamEditorControllerProvider).date, yesterday);
     await tester.tap(find.byKey(const Key('back-to-today-button')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(editorContent(tester), '今天的海边新草稿');
   });
 
@@ -111,6 +118,7 @@ void main() {
     expect(result(yesterday), findsOneWidget);
     await tester.tap(find.byKey(const Key('clear-dream-search')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(result(yesterday), findsNothing);
     expect(find.text('输入关键词，搜索梦境正文'), findsOneWidget);
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
@@ -152,9 +160,11 @@ void main() {
     await query(tester, '新词');
     newGate.complete([fresh]);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(result(today), findsOneWidget);
     oldGate.complete([old]);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(result(yesterday), findsNothing);
     expect(result(today), findsOneWidget);
     final lateGate = Completer<List<DreamEntry>>();
@@ -162,8 +172,10 @@ void main() {
     await query(tester, '晚到');
     await tester.tap(find.byKey(const Key('clear-dream-search')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     lateGate.complete([old]);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(result(yesterday), findsNothing);
     expect(find.text('输入关键词，搜索梦境正文'), findsOneWidget);
   });
@@ -180,6 +192,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(result(yesterday), findsOneWidget);
     await query(tester, '不存在');
     expect(find.text('没有找到匹配的梦境'), findsOneWidget);
@@ -196,10 +209,12 @@ void main() {
     button.onPressed!();
     input.onChanged!('输入法交付的末尾草稿');
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect((await editor.getByDate(today))!.content, '输入法交付的末尾草稿');
     expect(field, findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(editorField, findsOneWidget);
     await openSearch(tester);
     expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
@@ -215,11 +230,13 @@ void main() {
     expect(search.calls, isEmpty);
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openSearch(tester);
     await query(tester, '月亮');
     expect(result(today), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.enterText(editorField, ' \n\t');
     await openSearch(tester);
     await query(tester, '月亮');
@@ -235,9 +252,11 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(yesterday);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await openSearch(tester);
     notifications.onTap!(ReminderDestination.today);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(field, findsNothing);
     expect(container.read(dreamEditorControllerProvider).date, today);
     expect(editorContent(tester), '今天的月亮');
@@ -277,11 +296,12 @@ class _EditorRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (saveFailures > 0) {
       saveFailures--;
       throw StateError('测试用保存失败');
     }
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }

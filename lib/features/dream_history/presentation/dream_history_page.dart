@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/presentation/daily_feedback_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +8,7 @@ import 'package:morpheus/l10n/app_text.dart';
 
 /// 按梦境所属日期倒序回顾已保存记录，沿用现有 Material 主题。
 ///
-/// 列表只显示正文预览；点击记录后把“日期”交还编辑器，完整正文仍通过
+/// 列表显示正文预览或无正文反馈；点击记录后把“日期”交还编辑器，完整数据仍通过
 /// Repository 按日期读取。这样查看、修改、删除都复用原来的可靠保存链路。
 class DreamHistoryPage extends ConsumerWidget {
   const DreamHistoryPage({super.key});
@@ -78,7 +79,17 @@ class DreamHistoryPage extends ConsumerWidget {
                     context.l10n.dreamDate(date.year, date.month, date.day),
                   ),
                   subtitle: Text(
-                    entry.content.replaceAll(RegExp(r'\s+'), ' ').trim(),
+                    entry.content.trim().isNotEmpty
+                        ? entry.content.replaceAll(RegExp(r'\s+'), ' ').trim()
+                        : context.l10n.dailyFeedbackSummary(
+                            moodLabel(context, entry.feedback.mood),
+                            entry.feedback.sleepScore == null
+                                ? context.l10n.dailyUnfilled
+                                : context.l10n.dailyScoreValue(
+                                    entry.feedback.sleepScore!,
+                                  ),
+                            factorsLabel(context, entry.feedback),
+                          ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

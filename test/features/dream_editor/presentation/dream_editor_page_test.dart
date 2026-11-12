@@ -1,3 +1,5 @@
+import '../../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -40,6 +42,7 @@ void main() {
 
     // Finish the controller's asynchronous initial read.
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     const dream = '我梦见一座漂浮在云上的图书馆。';
     await tester.enterText(find.byKey(const Key('dream-content-field')), dream);
@@ -52,6 +55,7 @@ void main() {
     // The controller deliberately waits 800 ms after the last keystroke.
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     final saved = await repository.getByDate(DateTime.now());
     expect(saved?.content, dream);
@@ -68,11 +72,13 @@ void main() {
     await tester.enterText(find.byKey(const Key('dream-content-field')), draft);
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('重试'), findsOneWidget);
     expect(find.text(draft), findsOneWidget);
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(find.text(draft), findsOneWidget);
     expect(find.text('已保存'), findsOneWidget);
@@ -91,6 +97,7 @@ void main() {
 
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(tester.widget<TextField>(field).enabled, isTrue);
     expect(find.text('磁盘上实际存在的内容'), findsOneWidget);
@@ -121,6 +128,7 @@ void main() {
       '离开 App 前最后输入的文字',
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('已保存'), findsOneWidget);
   });
 
@@ -147,6 +155,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     gate.complete();
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
 
     expect(
       (await repository.getByDate(DateTime.now()))?.content,
@@ -179,6 +188,7 @@ Future<void> _showEditor(
     ),
   );
   await tester.pumpAndSettle();
+  await openDreamTextIfPrompted(tester);
 }
 
 /// 在一次读/写操作上注入故障或延迟，使错误处理测试可以稳定重复。
@@ -200,6 +210,7 @@ class _FaultInjectingRepository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     final gate = nextSaveGate;
     nextSaveGate = null;
@@ -210,6 +221,6 @@ class _FaultInjectingRepository extends InMemoryDreamRepository {
       saveFailures -= 1;
       throw StateError('模拟一次写入失败');
     }
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }

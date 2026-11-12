@@ -1,3 +1,5 @@
+import '../../helpers/daily_record_test_helper.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -43,6 +45,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
@@ -52,6 +55,7 @@ void main() {
   Future<void> tab(WidgetTester tester, String name) async {
     await tester.tap(find.byKey(Key('nav-$name')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
   }
 
   String text(WidgetTester tester) => tester
@@ -100,6 +104,7 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .contentChanged('输入法最后交付');
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('梦境统计'), findsOneWidget);
     expect(find.byKey(const Key('dream-search-field')), findsNothing);
     expect((await repository.getByDate(DateTime.now()))!.content, '输入法最后交付');
@@ -118,6 +123,7 @@ void main() {
     repository.failSave = false;
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tab(tester, 'statistics');
     expect(find.text('1 天'), findsOneWidget);
   });
@@ -130,18 +136,22 @@ void main() {
     await tab(tester, 'calendar');
     await tester.tap(find.byKey(const Key('calendar-previous-month')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(
       find.byKey(Key('calendar-day-${DreamEntry.dateKey(old)}')),
     );
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(text(tester), '旧月测试梦境');
     expect(container.read(dreamEditorControllerProvider).date, old);
     await tab(tester, 'statistics');
     await tester.tap(find.text('月'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('0 天'), findsOneWidget);
     await tester.tap(find.byKey(const Key('statistics-previous')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('1 天'), findsOneWidget);
   });
 
@@ -155,9 +165,11 @@ void main() {
           .read(dreamEditorControllerProvider.notifier)
           .selectDate(old);
       await tester.pumpAndSettle();
+      await openDreamTextIfPrompted(tester);
       await tab(tester, name);
       notifications.onTap!(ReminderDestination.today);
       await tester.pumpAndSettle();
+      await openDreamTextIfPrompted(tester);
       expect(text(tester), '当天测试梦境');
       expect(
         tester
@@ -189,6 +201,7 @@ void main() {
     );
     repository.saveGate!.complete();
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(text(tester), '等待写入的测试梦境');
     expect(find.text('梦境统计'), findsNothing);
     expect(
@@ -217,6 +230,7 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .contentChanged('回顾通知前的测试草稿及末尾');
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('梦境统计'), findsOneWidget);
     expect(
       (await repository.getByDate(DateTime.now()))!.content,
@@ -234,18 +248,23 @@ void main() {
     await tab(tester, 'statistics');
     await tester.tap(find.text('月'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     await tester.tap(find.byKey(const Key('statistics-previous')));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     notifications.onTap!(ReminderDestination.weeklyStatistics);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(
       tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
       currentWeekRange(),
     );
     await tester.tap(find.text('年'));
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     notifications.onTap!(ReminderDestination.weeklyStatistics);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(
       tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
       currentWeekRange(),
@@ -259,6 +278,7 @@ void main() {
         .read(dreamEditorControllerProvider.notifier)
         .selectDate(old);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     repository.failSave = true;
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
@@ -266,11 +286,13 @@ void main() {
     );
     notifications.onTap!(ReminderDestination.weeklyStatistics);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(text(tester), '回顾失败保留草稿');
     expect(container.read(dreamEditorControllerProvider).date, old);
     repository.failSave = false;
     notifications.onTap!(ReminderDestination.weeklyStatistics);
     await tester.pumpAndSettle();
+    await openDreamTextIfPrompted(tester);
     expect(find.text('梦境统计'), findsOneWidget);
     expect((await repository.getByDate(old))!.content, '回顾失败保留草稿');
   });
@@ -295,6 +317,7 @@ void main() {
       notifications.onTap!(latest);
       repository.saveGate!.complete();
       await tester.pumpAndSettle();
+      await openDreamTextIfPrompted(tester);
       if (latest == ReminderDestination.weeklyStatistics) {
         expect(find.text('梦境统计'), findsOneWidget);
       } else {
@@ -323,10 +346,11 @@ class _Repository extends InMemoryDreamRepository {
   Future<DreamEntry> save({
     required DateTime date,
     required String content,
+    DailyFeedback? feedback,
   }) async {
     if (failSave) throw StateError('测试保存失败');
     await saveGate?.future;
-    return super.save(date: date, content: content);
+    return super.save(date: date, content: content, feedback: feedback);
   }
 }
 
