@@ -19,7 +19,7 @@
 ## 2. 代码与交付基线
 
 - 每日记录与文字库已通过连接器发布为 `ab8bbec`，父提交 `0c3a00a`，远程文件树与本地 `8c87b22` 完全一致；本地原提交保留在 `codex/local-daily-record-upgrade`。发布后命令行 fetch 恢复成功，本地 main 已对齐该远程提交。
-- 首次 [CI 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 在分析阶段失败：工作流自动选用了 Flutter 3.50.0，全项目原有 Material 导入及生成本地化类出现 29 条弃用提示，测试步骤未执行。现将 CI 固定到双端构建已验收的 Flutter 3.47.7，不升级 App 依赖或迁移组件；修复后运行需实际核验，不能把首次失败记为通过。
+- 首次 [CI 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 在分析阶段失败：工作流自动选用了 Flutter 3.50.0，全项目原有 Material 导入及生成本地化类出现 29 条弃用提示，测试步骤未执行。现将 CI 固定到双端构建已验收的 Flutter 3.47.7，不升级 App 依赖或迁移组件；修复提交 `32304e3` 的 [CI 43187115680](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43187115680) 已全部通过，包含 214 项测试；首次失败记录保留。
 
 - 2026-11-12 每日记录升级基于 `0c3a00a`，本地功能提交 `a5c037c`。开发阶段按用户要求仅本地测试并打开 iOS 模拟器；用户同日确认“ok，没问题”，授权上传 GitHub 并完成文字库收尾。新增分类、正文、可空评分、因素与结束页；说明见 [每日记录](DAILY_RECORD_GUIDE.md)。本次记录为 iOS 模拟器用户验收通过，不扩展为 Android 或真机验收。
 - 验收后复核文字库共 143 条，补齐因素分隔符、移除未使用摘要键并添加资源注入回归；完整 214 项测试、格式与静态分析通过。两次命令行 fetch 分别遇到 HTTP/2 错误和 HTTP/1.1 连接超时，已用授权 GitHub 连接器确认远程主线仍为 `0c3a00a`；本次沿用连接器直接同步 [main](https://github.com/cyrusz2768-panda/Morpheus-App/tree/main)，不创建 PR，不声称命令行 push 成功。发布前核对父提交，发布后核对文件树和 GitHub Actions，实际结果见本轮交付回复。
@@ -69,6 +69,7 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-12，远程 `32304e3` | [GitHub Actions 43187115680](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43187115680)，Flutter 3.47.7 | 依赖恢复、文案／Drift 生成、格式、静态分析及 214 项测试全部通过；CI 不包含原生双端构建或人工验收 |
 | 2026-11-12，`a5c037c` 上的验收后文字库收尾 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，214 项；143 条 ARB 无重复键、语境说明齐全，新增注入资源验证状态／因素名、分隔符、评分与摘要句式。不改中文显示，未重复双端构建或操作模拟器，沿用下列同日功能构建结果 |
 | 2026-11-12，`a5c037c` | 用户确认“ok，没问题，上传github吧，然后合并新加入的文字到文字库” | 每日记录 iOS 模拟器用户验收通过，并授权双端源码及文字库同步主线；未新增逐项操作清单，不扩展 Android 或真机验收 |
 | 2026-11-12，`0c3a00a` 上的每日记录工作区 | `flutter --no-version-check pub get`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，213 项；覆盖 v1 文件无损升级、无正文反馈重开与历史/月历、评分约束、全部跳过完成恢复、串行写入、失败保护、步骤与切日竞态、窄屏大字号；生成文件不提交 |

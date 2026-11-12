@@ -2,6 +2,8 @@
 
 ## 2026-11-12
 
+- CI 版本固定修复已发布为 `32304e3`，[GitHub Actions 43187115680](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43187115680) 实际使用 Flutter 3.47.7，依赖恢复、文案／Drift 生成、格式、静态分析和 214 项测试全部通过。此后仅补记交付证据；CI 不包含双端原生构建或人工验收。本地原 CI 修复提交保留在 `codex/local-daily-record-ci`；网络不稳定时通过连接器读取元数据、校验完全相同的 Git 对象 SHA 后对齐本地主线，不强推或改写远程历史。
+
 - 每日记录与验收后文字库经 GitHub 连接器直接发布为 `ab8bbec`，核验父提交 `0c3a00a` 与文件树完全一致；原本地提交 `a5c037c`／`8c87b22` 保留在 `codex/local-daily-record-upgrade`。发布后命令行 fetch 成功，本地主线已对齐远程。
 - [GitHub Actions 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 首次运行失败，实际使用自动更新的 Flutter 3.50.0，分析报 29 条旧 Material 导入及生成本地化类弃用信息，测试被跳过；不是本机 214 项测试失败。固定 CI 为本机已验收 Flutter 3.47.7，不改 App 依赖、界面或降低检查规则；后续运行单独核验，不把首次失败写为通过。
 
