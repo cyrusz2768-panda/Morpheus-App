@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
@@ -76,6 +77,7 @@ void main() {
     expect(find.text('重试'), findsOneWidget);
     expect(find.text(draft), findsOneWidget);
 
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -95,6 +97,7 @@ void main() {
     expect(tester.widget<TextField>(field).enabled, isFalse);
     expect(find.text('重试'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -211,6 +214,7 @@ class _FaultInjectingRepository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     final gate = nextSaveGate;
     nextSaveGate = null;

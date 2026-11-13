@@ -1,3 +1,6 @@
+import 'package:flutter/services.dart';
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
+import 'package:morpheus/features/dream_editor/data/image_attachment_service.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
 
@@ -34,6 +37,11 @@ class DreamEditorController extends Notifier<DreamEditorState> {
   Completer<void>? _saveCompletion;
   bool _dateChangeInProgress = false;
   int _loadRequest = 0;
+  Completer<void>? _imageTask;
+  List<DreamImage> _persistedImages = const [];
+  bool _hasPendingSelection = false;
+  bool _pendingSelectionCommitted = false;
+  Set<String> _pendingImageNames = {};
 
   @override
   DreamEditorState build() {
@@ -46,7 +54,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
       // 测试或路由退出可能在这个 microtask 执行前就销毁 Provider。
       // 销毁后不能再读取 ref 或修改 state。
       if (ref.mounted) {
-        unawaited(_readDate(today));
+        unawaited(_initialize(today));
       }
     });
 
@@ -57,6 +65,8 @@ class DreamEditorController extends Notifier<DreamEditorState> {
       _loadRequest += 1;
       // 仓库写入可能仍在等待系统 IO；页面已经销毁时，导航等待方可以立即
       // 结束并返回失败，而无需等待一个不再影响页面的旧任务。
+      final imageTask = _imageTask;
+      if (imageTask != null && !imageTask.isCompleted) imageTask.complete();
       final completion = _saveCompletion;
       if (completion != null && !completion.isCompleted) {
         completion.complete();
@@ -64,6 +74,111 @@ class DreamEditorController extends Notifier<DreamEditorState> {
     });
 
     return DreamEditorState(date: today);
+  }
+
+  Future<void> _initialize(DateTime today) async {
+    final completion = Completer<void>();
+    _imageTask = completion;
+    try {
+      PendingImageSelection? pending;
+      var failed = false;
+      try {
+        pending = await ref.read(imageAttachmentServiceProvider).recover();
+      } on Object {
+        failed = true;
+      }
+      if (!ref.mounted) return;
+      if (!await _readDate(pending?.date ?? today) || !ref.mounted) return;
+      if (pending != null) {
+        _hasPendingSelection = true;
+        _pendingImageNames = pending.images.map((e) => e.fileName).toSet();
+        final names = state.images.map((e) => e.fileName).toSet();
+        state = state.copyWith(
+          images: List.unmodifiable([
+            ...state.images,
+            ...pending.images.where((e) => !names.contains(e.fileName)),
+          ]),
+          saveStatus: DreamSaveStatus.unsaved,
+        );
+        await saveNow();
+      } else if (failed) {
+        state = state.copyWith(
+          attachmentError: ref.read(appLocalizationsProvider).imageAddFailed,
+        );
+      }
+    } finally {
+      if (!completion.isCompleted) completion.complete();
+      _imageTask = null;
+    }
+  }
+
+  /// 图片进入与正文同一个保存队列。操作期间仍可输入文字，保存时总取最新快照。
+  Future<void> addImage() async {
+    if (!ref.mounted ||
+        !state.canEdit ||
+        state.isAddingImages ||
+        _imageTask != null ||
+        state.isAdvancing ||
+        _dateChangeInProgress) {
+      return;
+    }
+    final completion = Completer<void>();
+    _imageTask = completion;
+    state = state.copyWith(isAddingImages: true, clearAttachmentError: true);
+    try {
+      if (!await _flushSavesOnly() || !ref.mounted) return;
+      final date = state.date;
+      final images = await ref.read(imageAttachmentServiceProvider).pick(date);
+      if (!ref.mounted || images.isEmpty) return;
+      _hasPendingSelection = true;
+      _pendingImageNames = images.map((e) => e.fileName).toSet();
+      state = state.copyWith(
+        images: List.unmodifiable([...state.images, ...images]),
+        saveStatus: DreamSaveStatus.unsaved,
+        clearError: true,
+      );
+      await _flushSavesOnly();
+    } on PlatformException catch (error) {
+      // 用户拒绝系统授权时保持原记录，不叠加 App 自制权限提示。
+      if (ref.mounted &&
+          !error.code.contains('access_denied') &&
+          !error.code.contains('access_restricted')) {
+        state = state.copyWith(
+          attachmentError: ref.read(appLocalizationsProvider).imageAddFailed,
+        );
+      }
+    } on Object {
+      if (ref.mounted) {
+        state = state.copyWith(
+          attachmentError: ref.read(appLocalizationsProvider).imageAddFailed,
+        );
+      }
+    } finally {
+      if (ref.mounted) state = state.copyWith(isAddingImages: false);
+      if (!completion.isCompleted) completion.complete();
+      _imageTask = null;
+    }
+  }
+
+  void removeImage(DreamImage image) {
+    if (!ref.mounted ||
+        !state.canEdit ||
+        state.isAddingImages ||
+        _imageTask != null ||
+        _pendingSelectionCommitted) {
+      return;
+    }
+    if (!state.images.any((e) => e.fileName == image.fileName)) return;
+    _pendingImageNames.remove(image.fileName);
+    state = state.copyWith(
+      images: List.unmodifiable(
+        state.images.where((e) => e.fileName != image.fileName),
+      ),
+      saveStatus: DreamSaveStatus.unsaved,
+      clearError: true,
+    );
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDelay, saveNow);
   }
 
   /// 保留已有调用入口，但所有主动切换日期都必须先保护当前草稿。
@@ -79,6 +194,13 @@ class DreamEditorController extends Notifier<DreamEditorState> {
   /// 期间又输入了新文字，还要确认最后一版也保存成功，才能离开当前日期。
   /// 保存失败返回 false，保留草稿和错误提示，由用户决定何时重试。
   Future<bool> flushPendingSave() async {
+    // 相册返回、文件复制与保存完成前，导航必须等候，不能把结果附到另一日期。
+    final task = _imageTask;
+    if (task != null) await task.future;
+    return _flushSavesOnly();
+  }
+
+  Future<bool> _flushSavesOnly() async {
     if (!ref.mounted || state.isLoading) {
       return false;
     }
@@ -160,10 +282,12 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         return false;
       }
 
+      _persistedImages = entry?.images ?? const [];
       state = DreamEditorState(
         date: normalizedDate,
         content: entry?.content ?? '',
         feedback: entry?.feedback ?? const DailyFeedback(),
+        images: entry?.images ?? const [],
         // 历史记录直接查看；当天未完成的流程重新从分类开始，正文始终保留。
         step:
             entry != null &&
@@ -294,6 +418,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         final contentToSave = state.content;
         final dateToSave = state.date;
         final feedbackToSave = state.feedback;
+        final imagesToSave = state.images;
 
         state = state.copyWith(
           saveStatus: DreamSaveStatus.saving,
@@ -302,6 +427,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
 
         final repository = ref.read(dreamRepositoryProvider);
         if (contentToSave.trim().isEmpty &&
+            imagesToSave.isEmpty &&
             !feedbackToSave.hasData &&
             !feedbackToSave.completed) {
           await repository.deleteByDate(dateToSave);
@@ -310,17 +436,46 @@ class DreamEditorController extends Notifier<DreamEditorState> {
             date: dateToSave,
             content: contentToSave,
             feedback: feedbackToSave,
+            images: imagesToSave,
           );
         }
 
-        if (!ref.mounted) {
-          return;
+        // 先提交数据库，再清理旧文件。文件清理失败最多留下孤立文件，不能
+        // 把数据库成功误报为失败，更不能在重试前删掉数据库仍引用的图片。
+        final removed = _persistedImages
+            .where(
+              (old) => !imagesToSave.any((e) => e.fileName == old.fileName),
+            )
+            .toList();
+        _persistedImages = imagesToSave;
+        if (ref.mounted &&
+            _hasPendingSelection &&
+            _pendingImageNames.every(
+              (name) => imagesToSave.any((image) => image.fileName == name),
+            )) {
+          // 恢复日志确认属于保存流程，而非可忽略的文件清理。确认失败时保持
+          // 失败草稿并锁定图片移除，重试成功前不允许旧日志在重启后复活已删图片。
+          _pendingSelectionCommitted = true;
+          await ref
+              .read(imageAttachmentServiceProvider)
+              .completeSelection(dateToSave);
+          _hasPendingSelection = false;
+          _pendingSelectionCommitted = false;
         }
+        if (ref.mounted && removed.isNotEmpty) {
+          try {
+            await ref.read(imageAttachmentServiceProvider).removeFiles(removed);
+          } on Object {
+            // DB 已提交；清理失败仅留下孤立文件，不回滚或误报保存失败。
+          }
+        }
+        if (!ref.mounted) return;
 
         // If the user typed while the write was running, keep "unsaved" and
         // loop again with the newer content.
         if (state.content != contentToSave ||
-            !identical(state.feedback, feedbackToSave)) {
+            !identical(state.feedback, feedbackToSave) ||
+            !identical(state.images, imagesToSave)) {
           _anotherSaveRequested = true;
           state = state.copyWith(saveStatus: DreamSaveStatus.unsaved);
         } else {

@@ -51,6 +51,8 @@ dependencies:
   # 获取设备真正的 IANA 时区，并按当地的“每天几点”计算下一次提醒。
   flutter_timezone: ^5.1.1
   timezone: ^0.11.2
+  # 官方系统相册选择器；图片选取后复制到私有目录，不依赖相册临时路径。
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

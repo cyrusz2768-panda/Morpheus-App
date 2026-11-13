@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:flutter/material.dart';
@@ -118,6 +119,7 @@ void main() {
     await _openHistory(tester);
 
     expect(find.text('读取历史梦境失败，请重试。'), findsOneWidget);
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -225,6 +227,7 @@ void main() {
     expect(repository.historyReads, 0);
     expect(find.text('重试'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -310,6 +313,7 @@ class _HistoryRepository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     if (saveFailures > 0) {
       saveFailures -= 1;

@@ -70,7 +70,7 @@ void main() {
       expect(await search.search('太阳'), hasLength(1));
       await editor.deleteByDate(date);
       expect(await search.search('太阳'), isEmpty);
-      expect(database.schemaVersion, 2);
+      expect(database.schemaVersion, 3);
     });
 
     test('数据库读取失败向上传递，不伪装成无匹配', () async {

@@ -2,6 +2,25 @@
 
 ## 2026-11-13
 
+- 用户确认图片附件和布局“验收通过，没有问题”，授权上传 GitHub；iOS模拟器用户验收基线 `53d0236`。最终270项测试、格式、分析及双端构建已通过，本次源码不变，不重复构建或操作模拟器，不扩大为Android人工验收或真机验证。
+- 验收后审校中文文字库159条，JSON无重复键、每条语境齐全，图片相关8项资源在页面/Controller接线完整；iOS系统相册用途说明独立维护，仅交付中文。上传前fetch低速超时，已授权连接器确认远程main仍为`2a69db0`，没有新增提交。按现行约定本地整合main并发布，实际结果随后核验。
+- 已快进整合到本地main。实际命令行push因缺少GitHub HTTPS登录凭据失败（禁用终端交互），未上传成功；按仓库已有授权改用GitHub连接器发布同一文件树，保留原本地分支，不创建PR或强推。后续核对远程父提交、完整文件树与CI结果。
+
+- 图片验收反馈继续基于 `3c02ac4` 调整：去除用户截图中的输入区外框；图片按比例自然展开，加号、继续、跳过、梦境状态和保存提示随图片高度往下排版。只保留正文整页滚动，移除图片固定高度及输入区内滚动；无数据库、依赖或用户文案变化。新增横/竖图几何回归，检查所有后续控件下移量与图片高度一致。起始工作区干净，fetch成功且远程main无新增提交，仍不合并或上传。
+- 本次针对性18项检查和静态分析通过。首次全量265项通过、5项失败，均为旧测试直接点击已随页面下移的“重试”导致未命中；补齐滚动到可见入口后点击，保留原草稿保护和重试断言，重新执行完整检查，不将首次失败记成通过。
+- 本次最终 `flutter --no-version-check test --no-pub --reporter expanded` 全270项通过；保存失败后的草稿、重试、导航保护继续验证。无新增或修改用户可见文案，本次不改ARB或生成本地化。
+- `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`git diff --check`通过；Android `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`通过（56.3秒），未启动Android或进行人工验收。
+- iOS `flutter --no-version-check build ios --simulator --debug --no-pub`通过（45.1秒）；本轮无依赖或数据库变更，未重复pub恢复或Drift生成。升级安装保留原模拟器沙盒，人工查看与用户验收另记。
+- 最终 iOS 通过 `xcrun simctl install`、`xcrun simctl launch --terminate-running-process` 保留数据升级运行；窗口实际查看正文外框已消失、既有横图完整呈现，加号与继续按钮移到图片下方。未新增/删除图片，未标记用户验收通过，留在正文图片页供继续验收。仍仅本地功能分支交付，不合main、不上传GitHub。
+
+- 本轮图片附件基于 `2a69db0`，起始干净，使用本地 `codex/dream-image-attachments`；用户要求先测试并打开 iOS 验收，验收前不合 main、不上传 GitHub。fetch 低速超时后由授权连接器核对远程 main 根目录各 SHA 与本地主线一致。
+- 相册图片先落私有文件再写 v3 元数据；v1/v2 无损升级。正文框左下加号上方弹单项菜单、等宽原比例缩略图、黑底大图右下垃圾桶、长按移除；共用串行保存与失败草稿保护。按用户补充，仅图片算记录，历史/月历/统计活动按日期去重，清空文字保留图、反馈和完成标记。
+- 新增官方 `image_picker` 及平台依赖，原锁定依赖不升级；中文资源同步159条，iOS系统相册用途说明独立配置，无 App 自制相册权限提示。Android Activity 回收按原日期恢复，日志确认匹配已提交图片，确认失败禁止移除；启动恢复加锁，通知切日等候恢复完成。
+- 第一轮267项完整测试、格式、分析和双端构建通过；最终补充启动恢复/通知竞态用例后重新验证，结果另记。iOS保留数据升级启动，实际进入正文并查看加号上方菜单；未手工选图/删图，不标记用户验收通过。模拟器显示连接卡住后重启恢复，未删库或重置数据。
+- 最终 `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` 全通过，268项；159条资源无重复键、语境完整，新说明链接有效。Android 最终调试构建通过（31.0秒），未启动 Android 或做真机验收。iOS最终构建和重装结果随后记录。
+- 最终 iOS 模拟器调试构建通过（36.0秒）。本轮未上传，GitHub Actions 未触发；验收通过后才整合 main、文案整体收尾和发布。
+- 功能保存为本地 `1bf5e66`；最终 iOS 通过 `xcrun simctl install` 保留沙盒安装、`xcrun simctl launch --terminate-running-process` 重新打开并返回进程。窗口交给用户验收，未在模拟器选图或写入测试图片；完整持久化人工验收待用户操作。没有合并 main 或上传 GitHub。
+
 - 统计及图表已通过 GitHub 连接器发布为 [`bca6713`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/bca6713e3988a997849d8e01e5ee7587c939e31c)，父提交 `871725d`，完整文件树 `d14c8ca542f5716075794b8f869c56eff886d06a` 与本地 `d989c14` 完全一致。本地原统计、图表及交付文档提交保留在 `codex/local-sleep-feedback-statistics-20261113`，重建 Git 对象并校验准确 SHA 后将本地主线对齐远程，无内容变更或强推。GitHub Actions [43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) 已全部通过，包含依赖恢复、文案／Drift 生成、格式、分析和测试；不替代本机双端构建或人工验收。此后仅补记交付结果，未再改功能或重复构建。
 - 本地图表提交为 `ccba4f6`，前一统计提交为 `d436207`。实际 `GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=15 push origin main` 遇到 GitHub 443 连接超时，未推送成功；按已有授权改用 GitHub 连接器直接发布同一文件树，保留本地原提交，不强推、不创建 PR。发布前再次核对远程基线，发布后核对完整文件树与 CI。
 - 用户确认当前结果并授权上传统计升级及图表调整。核对断连后工作区，12个预期文件完整保留，最终250项测试、静态分析、格式、双端构建与 iOS 图表窗口操作证据齐全；没有新增代码改动，沿用2026-11-12同一代码版本的验证，不重复构建或将断连当作测试失败。

@@ -295,7 +295,8 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     final navigationBusy =
         _isNavigating ||
         ref.read(navigationActivityProvider.notifier).isBusy ||
-        ref.watch(dreamEditorControllerProvider).isAdvancing;
+        (ref.watch(dreamEditorControllerProvider).isAdvancing ||
+            ref.watch(dreamEditorControllerProvider).isAddingImages);
     final editorState = ref.watch(dreamEditorControllerProvider);
     final reminderState = ref.watch(reminderControllerProvider);
     _queueMenuHint(reminderState);
@@ -414,6 +415,10 @@ class _EditorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 正文页的保存状态也参与文档排版，图片增高时不能仍悬在图片前面。
+    // 分类/评分等其他步骤维持既有的固定保存提示，不扩大此次 UI 调整范围。
+    final statusFollowsContent =
+        state.step == DailyRecordStep.content || !state.canEdit;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -453,10 +458,15 @@ class _EditorBody extends StatelessWidget {
             controller: controller,
             textController: textController,
             navigationBusy: navigationBusy,
+            contentFooter: statusFollowsContent
+                ? _SaveStatusLine(state: state, onRetry: onRetry)
+                : null,
           ),
         ),
-        const SizedBox(height: 12),
-        _SaveStatusLine(state: state, onRetry: onRetry),
+        if (!statusFollowsContent) ...[
+          const SizedBox(height: 12),
+          _SaveStatusLine(state: state, onRetry: onRetry),
+        ],
       ],
     );
   }

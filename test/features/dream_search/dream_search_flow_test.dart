@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
@@ -188,6 +189,7 @@ void main() {
     await query(tester, '月亮');
     expect(find.text('搜索失败，请重试。'), findsOneWidget);
     expect(tester.widget<TextField>(field).controller!.text, '月亮');
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
@@ -228,6 +230,7 @@ void main() {
     expect(field, findsNothing);
     expect(editorContent(tester), '保留的月亮草稿');
     expect(search.calls, isEmpty);
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -297,6 +300,7 @@ class _EditorRepository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     if (saveFailures > 0) {
       saveFailures--;

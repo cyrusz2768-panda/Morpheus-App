@@ -81,6 +81,8 @@ class DreamHistoryPage extends ConsumerWidget {
                   subtitle: Text(
                     entry.content.trim().isNotEmpty
                         ? entry.content.replaceAll(RegExp(r'\s+'), ' ').trim()
+                        : entry.images.isNotEmpty && !entry.feedback.hasData
+                        ? context.l10n.imageOnlySummary
                         : context.l10n.dailyFeedbackSummary(
                             moodLabel(context, entry.feedback.mood),
                             entry.feedback.sleepScore == null

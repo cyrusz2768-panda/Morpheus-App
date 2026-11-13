@@ -18,6 +18,17 @@
 
 ## 2. 代码与交付基线
 
+- **2026-11-13 用户确认图片附件及布局“验收通过，没有问题”，授权上传 GitHub。** 验收代码为 `53d0236`，图片功能基于 `1bf5e66`；原文、图片、仅图记录统计及完整展开布局均沿用同一已验证版本。本次只补验收/发布记录和文字库审校，不重做双端构建或操作模拟器。已复核159条中文资源无重复、语境齐全，图片8项文案全部接线；仅交付中文。下列“待验收／不合并／不上传”属于历史开发阶段，已被本次确认覆盖。
+- 上传前命令行 fetch 低速超时，授权 GitHub 连接器确认远程 main 仍为 `2a69db0`，没有新增提交。按用户授权本地整合到 main 后发布，实际推送方式、远程内容与 CI 结果随后核验；Android 本轮仍仅构建检查，真机未验收，链接附件尚未开发。
+- 本地已快进整合到 main；实际 `GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=15 push origin main` 因缺少 GitHub HTTPS 登录凭据失败。按已有授权采用 GitHub 连接器发布相同文件树，不创建PR、不强推、不将其记为命令行push成功；原本地提交保留在 `codex/dream-image-attachments`，远程父提交、文件树与CI将实际核验。
+
+- 2026-11-13 图片验收调整基于 `3c02ac4`：按用户截图移除正文区外框，图片完整展开并将加号及其下方控件（含保存提示）按自身高度向下推；正文步骤仅保留整页滚动，不再限制图片内部视口。工作区起始干净，本轮 fetch 成功，远程 main 无新增提交；继续等待用户验收，不合并或上传。最终完整270项测试、格式、分析和双端调试构建通过（Android 56.3秒、iOS 45.1秒）；包含横/竖图片的无外框、比例、位移和唯一页面滚动容器检查。
+- 本次最终 iOS 用 `xcrun simctl install` 保留沙盒升级，`xcrun simctl launch --terminate-running-process` 启动，实际进入正文查看：外框已移除，原有横向图片完整显示，加号和继续按钮位于图片下方。未新增或移除模拟器图片，未做 Android 人工验收或真机测试；窗口停在正文图片页供用户继续验收。
+
+- **当前本地任务（2026-11-13）：相册图片附件，基于 `2a69db0`，分支 `codex/dream-image-attachments`，待用户 iOS 验收，未整合 main、未上传 GitHub。** 用户要求验收后再合并/发布，覆盖默认直接推送流程；链接附件未开发。开发中同步维护中文资源，验收后的整体文案收尾仍待确认。起始工作区干净；命令行 fetch 低速超时，授权连接器读取的远程 main 根目录文件/子树 SHA 与本地主线逐项一致。
+- 图片采用私有文件 + v3 `images` 元数据，v1/v2 追加列无损升级；只有图片也算记录，历史/月历/统计活动按日期计入，同日多图去重。清空文字不会删图，已有反馈和完成标记继续保留。菜单、原比例缩略图、黑底放大、垃圾桶与长按移除共用 Controller 保存队列；Android lost-data 按原日期恢复。见 [图片附件说明](IMAGE_ATTACHMENTS_GUIDE.md)。
+- 本地功能提交 `1bf5e66`；268项测试、格式、分析与最终双端构建通过。最终 iOS 构建已用 `xcrun simctl install` 保留沙盒安装，并用 `xcrun simctl launch --terminate-running-process` 重新打开，命令成功返回 App 进程。模拟器留给用户验收；尚未收到验收确认，没有推送或触发新 CI。
+
 - 统计及图表现已发布到 main：功能提交 [`bca6713`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/bca6713e3988a997849d8e01e5ee7587c939e31c)，父提交 `871725d`；远程完整文件树与已验证本地版本完全一致。GitHub Actions [43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) 全部通过。本地主线已按准确 Git 对象 SHA 对齐，原提交保留在 `codex/local-sleep-feedback-statistics-20261113`。下列“等待验收／尚未上传”均为历史阶段；此次发布通过授权连接器完成。
 - 统计本地图表提交 `ccba4f6`，前一功能提交 `d436207`。本次命令行 push 遇到 GitHub 443 连接超时，改用已授权连接器发布同一文件树；不将其记为命令行 push 成功。原本地提交保留，远程父提交、内容与 CI 在交付时核验。
 - 2026-11-13 用户确认当前结果并授权将统计升级及图表调整上传 GitHub。复核断连前的最终记录：250项测试、静态分析、格式及双端调试构建均通过，iOS 已实际查看周／月／年图表。代码保持同一已验证版本，本轮只补交付文档；fetch 成功，远程主线仍为 `871725d`，无新增提交。以下“先不上传”是开发验收阶段的历史安排，已被本次授权覆盖；发布结果与 CI 另行核验，不扩大为 Android 或真机验收。
@@ -53,9 +64,9 @@
 | 功能 | 实际行为与主要入口 |
 |---|---|
 | 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/statistics`、`/calendar`、`/calendar-picker`、`/reminders` |
-| 梦境编辑 | 每天一条，分类／正文／主观评分／因素引导、结束回顾，800ms 自动保存；`lib/features/dream_editor/` |
+| 梦境编辑 | 每天一条，分类／正文／主观评分／因素引导、结束回顾，800ms 自动保存、相册图片附件；`lib/features/dream_editor/` |
 | 草稿保护 | 串行保存、切日/导航前 flush、后台尽力提交；读失败禁用编辑，保存失败保留文字并重试 |
-| 本地数据库 | Drift / SQLite，版本 2，v1 追加列保留旧数据，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
+| 本地数据库 | Drift / SQLite，版本 3，v1/v2 追加列保留旧数据，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
 | 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
@@ -66,10 +77,10 @@
 | 每日提醒 | 分组卡片、独立消息通知开关、开启后展开时间、可延后授权与按需系统设置、点击回当天；`lib/features/reminders/` |
 | 每周统计回顾 | 默认关闭、周日 21:00，独立星期/时间与开关；点击打开最新自然周，见 [回顾通知说明](WEEKLY_REVIEW_GUIDE.md) |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 151 条中文 ARB，含每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 159 条中文 ARB，含图片附件、每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
-存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白视为无正文；状态或睡眠反馈独立保留，无正文反馈也进入历史与月历。仅有完成标记的全跳过日期不展示历史圆点。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
+存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白视为无正文；状态或睡眠反馈独立保留，无正文反馈、仅图片也进入历史与月历，图片同时计入统计活动。仅有完成标记的全跳过日期不展示历史圆点。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
 
 当前身份为练习占位 `com.example.morpheus`，iOS 工程最低 15.0，Android SDK 基线沿用 Flutter 模板。正式发行身份、支持系统范围、证书和签名需单独确定。
 
@@ -77,6 +88,11 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-13，`2a69db0` 上图片附件工作区 | `flutter pub add image_picker:^1.2.4`、`flutter --no-version-check gen-l10n`、`dart run build_runner build` | 成功；SDK 查新超时后使用 `--no-version-check`；新依赖仅官方图片选择器及平台依赖，原锁定依赖不升级，生成物不提交 |
+| 2026-11-13，同上 | `dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 最终全部通过，268项；覆盖 v1/v2 升级、私有图片重开、仅图统计、选图/保存/切日/启动通知竞态、失败保护及普通/两倍/三倍字号菜单；159条中文资源语境齐全且无重复键 |
+| 2026-11-13，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub` | 最终通过，31.0秒；Android 未启动或逐项人工验收 |
+| 2026-11-13，同上 | `flutter --no-version-check build ios --simulator --debug --no-pub` | 最终通过，36.0秒；模拟器手工操作边界见下一行，真机未验证 |
+| 2026-11-13，同上 | 原 iOS 模拟器安装/启动，Device Hub 窗口检查 | 保留原沙盒升级，Dart VM 已连接；显示连接卡住后重启模拟器并重新启动 App，实际进入正文页、打开加号上方单行“添加图片”菜单。未在模拟器选/删照片或逐项重开图片，不标记用户验收通过；最终修复重装另记 |
 | 2026-11-13，远程 `bca6713` | [GitHub Actions 43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) | 依赖恢复、文案／Drift 生成、格式、静态分析及测试全部通过；远程文件树与下列本机250项测试及双端构建的版本一致，CI 本身不含原生构建或人工验收 |
 | 2026-11-12，`d436207` 上的图表验收调整 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，250 项；固定七日月分组含28／29／30／31日边界、当前组及未来排除、周逐日网格着色、月年环图保留、320宽普通／两倍／三倍字号完整显示且无横向滚动；151条中文资源语境齐全 |
 | 2026-11-12，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 最终双端通过（Gradle 25.7秒、Xcode 38.9秒）；Android 未启动或人工验收，iOS 安装及用户验收另记 |

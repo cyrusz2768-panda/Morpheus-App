@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/presentation/widgets/dream_image_attachments.dart';
 import 'package:morpheus/features/dream_editor/presentation/daily_feedback_text.dart';
 import 'package:flutter/material.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
@@ -14,6 +15,7 @@ class DailyRecordFlow extends StatelessWidget {
     required this.controller,
     required this.textController,
     this.navigationBusy = false,
+    this.contentFooter,
   });
 
   final DreamEditorState state;
@@ -21,13 +23,20 @@ class DailyRecordFlow extends StatelessWidget {
   final TextEditingController textController;
   final bool navigationBusy;
 
-  bool get enabled => state.canEdit && !state.isAdvancing && !navigationBusy;
+  /// 正文步骤的保存提示随图片一起向下排版，其他步骤仍由页面固定展示。
+  final Widget? contentFooter;
+
+  bool get enabled =>
+      state.canEdit &&
+      !state.isAdvancing &&
+      !state.isAddingImages &&
+      !navigationBusy;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     // 读取失败仍显示禁用编辑框和外层重试入口，不能把读取失败当作新的一天。
-    if (!state.canEdit) return _content(context, expands: true);
+    if (!state.canEdit) return _contentStep(context);
     switch (state.step) {
       case DailyRecordStep.mood:
         return _question(context, l.dailyMoodQuestion, [
@@ -48,47 +57,7 @@ class DailyRecordFlow extends StatelessWidget {
             ),
         ], () => controller.chooseMood(null));
       case DailyRecordStep.content:
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final minimum = MediaQuery.textScalerOf(context).scale(200) + 160;
-            final height = constraints.maxHeight < minimum
-                ? minimum
-                : constraints.maxHeight;
-            return SingleChildScrollView(
-              child: SizedBox(
-                height: height,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: _content(context, expands: true)),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      key: const Key('daily-content-next'),
-                      onPressed: enabled
-                          ? () {
-                              FocusScope.of(context).unfocus();
-                              controller.moveTo(DailyRecordStep.score);
-                            }
-                          : null,
-                      child: Text(l.dailyContinue),
-                    ),
-                    _skip(context, () {
-                      FocusScope.of(context).unfocus();
-                      controller.moveTo(DailyRecordStep.score);
-                    }),
-                    TextButton(
-                      key: const Key('daily-change-mood'),
-                      onPressed: enabled
-                          ? () => controller.moveTo(DailyRecordStep.mood)
-                          : null,
-                      child: Text(l.dailyMoodLabel),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+        return _contentStep(context);
       case DailyRecordStep.score:
         return _question(context, l.dailyScoreQuestion, [
           Wrap(
@@ -169,7 +138,8 @@ class DailyRecordFlow extends StatelessWidget {
                   DailyRecordStep.mood,
                 ),
                 if (state.feedback.hidesContent &&
-                    state.content.trim().isNotEmpty)
+                    (state.content.trim().isNotEmpty ||
+                        state.images.isNotEmpty))
                   ExpansionTile(
                     key: const Key('daily-hidden-content'),
                     title: Text(l.dailyHiddenDream),
@@ -223,19 +193,93 @@ class DailyRecordFlow extends StatelessWidget {
     ),
   );
 
-  Widget _content(BuildContext context, {bool expands = false}) => TextField(
-    key: const Key('dream-content-field'),
-    controller: textController,
-    enabled: state.canEdit && !navigationBusy,
-    onChanged: controller.contentChanged,
-    expands: expands,
-    minLines: expands ? null : 7,
-    maxLines: null,
-    textAlignVertical: TextAlignVertical.top,
-    keyboardType: TextInputType.multiline,
-    decoration: InputDecoration(
-      labelText: context.l10n.dreamContentLabel,
-      hintText: context.l10n.dreamContentHint,
+  /// 图片占用它真实的比例高度，把加号、后续按钮与保存提示一起往下推。
+  /// 只保留正文步骤这一个页面滚动容器，不给附件另设固定高度的内部视口。
+  /// 因此多图/长图会扩展整页，用户无需在输入框里滚动才能看完整张图片。
+  Widget _contentStep(BuildContext context) => SingleChildScrollView(
+    key: const Key('daily-content-scroll'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _content(context),
+        const SizedBox(height: 12),
+        if (state.canEdit) ...[
+          FilledButton(
+            key: const Key('daily-content-next'),
+            onPressed: enabled
+                ? () {
+                    FocusScope.of(context).unfocus();
+                    controller.moveTo(DailyRecordStep.score);
+                  }
+                : null,
+            child: Text(context.l10n.dailyContinue),
+          ),
+          _skip(context, () {
+            FocusScope.of(context).unfocus();
+            controller.moveTo(DailyRecordStep.score);
+          }),
+          TextButton(
+            key: const Key('daily-change-mood'),
+            onPressed: enabled
+                ? () => controller.moveTo(DailyRecordStep.mood)
+                : null,
+            child: Text(context.l10n.dailyMoodLabel),
+          ),
+        ],
+        if (contentFooter != null) ...[
+          const SizedBox(height: 12),
+          contentFooter!,
+        ],
+      ],
+    ),
+  );
+
+  Widget _content(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          key: const Key('dream-content-field'),
+          controller: textController,
+          enabled: state.canEdit && !navigationBusy,
+          onChanged: controller.contentChanged,
+          minLines: 7,
+          maxLines: null,
+          textAlignVertical: TextAlignVertical.top,
+          keyboardType: TextInputType.multiline,
+          decoration: InputDecoration(
+            labelText: context.l10n.dreamContentLabel,
+            hintText: context.l10n.dreamContentHint,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+          ),
+        ),
+        DreamImageAttachments(
+          images: state.images,
+          controller: controller,
+          enabled: enabled,
+        ),
+        if (state.attachmentError != null)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              state.attachmentError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AddImageButton(
+            enabled: enabled,
+            busy: state.isAddingImages,
+            onAdd: controller.addImage,
+          ),
+        ),
+      ],
     ),
   );
 

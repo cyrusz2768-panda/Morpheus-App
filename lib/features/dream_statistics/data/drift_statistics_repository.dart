@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'dart:convert';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
@@ -30,6 +31,7 @@ class DriftStatisticsRepository implements IStatisticsRepository {
       ..addColumns([
         table.dreamDate,
         table.content,
+        table.images,
         table.dreamMood,
         table.sleepScore,
         table.sleepFactors,
@@ -48,7 +50,9 @@ class DriftStatisticsRepository implements IStatisticsRepository {
               jsonDecode(row.read(table.sleepFactors) ?? '[]') as List;
           return StatisticsRecord(
             date: DateTime.parse(row.read(table.dreamDate)!),
-            hasContent: row.read(table.content)!.trim().isNotEmpty,
+            hasContent:
+                row.read(table.content)!.trim().isNotEmpty ||
+                DreamImage.decode(row.read(table.images)!).isNotEmpty,
             feedback: DailyFeedback(
               mood: DreamMood.values
                   .where((m) => m.name == row.read(table.dreamMood))

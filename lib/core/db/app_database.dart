@@ -21,9 +21,9 @@ class AppDatabase extends _$AppDatabase {
   /// SQL / Repository 逻辑，而不依赖模拟器、path_provider 或用户的真实数据。
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
-  /// v2 在原表追加反馈列；日期、原文与时间戳原样保留，不删除或重建用户数据。
+  /// v2 追加反馈列，v3 追加附件元数据；旧日期、原文与时间戳原样保留。
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// 第一次打开空数据库时执行建表；已经存在的同版本文件不会被清空。
   @override
@@ -34,6 +34,9 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(dreamRecords, dreamRecords.sleepScore);
         await migrator.addColumn(dreamRecords, dreamRecords.sleepFactors);
         await migrator.addColumn(dreamRecords, dreamRecords.flowCompleted);
+      }
+      if (from < 3) {
+        await migrator.addColumn(dreamRecords, dreamRecords.images);
       }
     },
     onCreate: (migrator) async {

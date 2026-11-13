@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 
 enum DailyRecordStep { mood, content, score, factors, summary }
@@ -35,6 +36,9 @@ class DreamEditorState {
     required this.date,
     this.content = '',
     this.feedback = const DailyFeedback(),
+    this.images = const [],
+    this.isAddingImages = false,
+    this.attachmentError,
     this.step = DailyRecordStep.mood,
     this.isAdvancing = false,
     this.isLoading = true,
@@ -46,6 +50,9 @@ class DreamEditorState {
   final DateTime date;
   final String content;
   final DailyFeedback feedback;
+  final List<DreamImage> images;
+  final bool isAddingImages;
+  final String? attachmentError;
   final DailyRecordStep step;
   final bool isAdvancing;
   final bool isLoading;
@@ -69,6 +76,10 @@ class DreamEditorState {
     DateTime? date,
     String? content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
+    bool? isAddingImages,
+    String? attachmentError,
+    bool clearAttachmentError = false,
     DailyRecordStep? step,
     bool? isAdvancing,
     bool? isLoading,
@@ -81,6 +92,11 @@ class DreamEditorState {
       date: date ?? this.date,
       content: content ?? this.content,
       feedback: feedback ?? this.feedback,
+      images: images ?? this.images,
+      isAddingImages: isAddingImages ?? this.isAddingImages,
+      attachmentError: clearAttachmentError
+          ? null
+          : attachmentError ?? this.attachmentError,
       step: step ?? this.step,
       isAdvancing: isAdvancing ?? this.isAdvancing,
       isLoading: isLoading ?? this.isLoading,

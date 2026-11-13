@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
@@ -178,6 +179,7 @@ void main() {
     await openCalendar(tester);
     expect(find.text('梦境月历'), findsNothing);
     expect(content(tester), '保存失败时保留的测试草稿');
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -215,6 +217,7 @@ class _CalendarDreamRepository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     if (saveFailures > 0) {
       saveFailures--;

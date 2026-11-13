@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
@@ -256,6 +257,7 @@ void main() {
     expect(notifications.requests, 0);
 
     dreams.failSave = false;
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -345,6 +347,7 @@ class _DreamRepository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     if (failSave) throw StateError('Scripted dream save failure');
     return super.save(date: date, content: content, feedback: feedback);

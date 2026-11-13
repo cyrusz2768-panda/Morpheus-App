@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
 import '../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
@@ -122,6 +123,7 @@ void main() {
     expect(text(tester), '失败保留草稿');
     expect(find.text('梦境统计'), findsNothing);
     repository.failSave = false;
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
@@ -385,6 +387,7 @@ class _Repository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     if (failSave) throw StateError('测试保存失败');
     await saveGate?.future;

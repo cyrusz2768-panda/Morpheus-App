@@ -833,5 +833,37 @@
         "type": "int"
       }
     }
+  },
+  "addAttachment": "添加附件",
+  "@addAttachment": {
+    "description": "正文框左下角加号的读屏标签"
+  },
+  "addImage": "添加图片",
+  "@addImage": {
+    "description": "加号上方附件菜单第一项"
+  },
+  "deleteImage": "删除图片",
+  "@deleteImage": {
+    "description": "大图右下角垃圾桶与长按移除按钮"
+  },
+  "viewImage": "查看图片",
+  "@viewImage": {
+    "description": "缩略图点击查看大图的读屏标签"
+  },
+  "closeImage": "关闭图片",
+  "@closeImage": {
+    "description": "黑色大图左上角关闭按钮"
+  },
+  "imageUnavailable": "图片暂时无法显示",
+  "@imageUnavailable": {
+    "description": "本地附件文件缺失或解码失败，仍保留附件引用供重试或删除"
+  },
+  "imageAddFailed": "图片未能添加，请重试",
+  "@imageAddFailed": {
+    "description": "图片选择或复制失败，不额外提示相册权限"
+  },
+  "imageOnlySummary": "图片记录",
+  "@imageOnlySummary": {
+    "description": "历史列表只有图片且无正文或反馈时的摘要"
   }
 }

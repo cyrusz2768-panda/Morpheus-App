@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,6 +164,7 @@ void main() {
     expect(find.text('重试'), findsOneWidget);
     expect(getState().feedback.mood, DreamMood.nightmare);
     repo.fail = false;
+    await tester.ensureVisible(find.text('重试'));
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     await tap(tester, 'daily-mood-nightmare');
@@ -249,6 +251,7 @@ class _Repository extends InMemoryDreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     final pending = gate;
     gate = null;

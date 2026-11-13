@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'dart:convert';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:drift/drift.dart';
@@ -49,6 +50,7 @@ class DriftDreamRepository implements DreamRepository {
     required DateTime date,
     required String content,
     DailyFeedback? feedback,
+    List<DreamImage>? images,
   }) async {
     // 省略 feedback 的旧调用只修改正文，保留当天已有反馈。
     // Controller 提交完整快照，确保清空正文不会连带删除评分和状态。
@@ -59,11 +61,14 @@ class DriftDreamRepository implements DreamRepository {
     // DoUpdate 生成 INSERT ... ON CONFLICT DO UPDATE：同一天更新正文和
     // updatedAtMillis，但绝不覆盖第一次写入的 createdAtMillis。
     return _database.transaction(() async {
+      final existing = await getByDate(date);
+      final savedImages = List<DreamImage>.unmodifiable(
+        images ?? existing?.images ?? const [],
+      );
       final savedFeedback =
-          feedback ??
-          (await getByDate(date))?.feedback ??
-          const DailyFeedback();
+          feedback ?? existing?.feedback ?? const DailyFeedback();
       if (content.trim().isEmpty &&
+          savedImages.isEmpty &&
           !savedFeedback.hasData &&
           !savedFeedback.completed) {
         throw ArgumentError('记录没有正文或反馈，请使用删除操作');
@@ -75,6 +80,7 @@ class DriftDreamRepository implements DreamRepository {
             DreamRecordsCompanion.insert(
               dreamDate: key,
               content: content,
+              images: Value(DreamImage.encode(savedImages)),
               dreamMood: Value(savedFeedback.mood?.name),
               sleepScore: Value(savedFeedback.sleepScore),
               sleepFactors: Value(
@@ -87,6 +93,7 @@ class DriftDreamRepository implements DreamRepository {
             onConflict: DoUpdate(
               (_) => DreamRecordsCompanion(
                 content: Value(content),
+                images: Value(DreamImage.encode(savedImages)),
                 dreamMood: Value(savedFeedback.mood?.name),
                 sleepScore: Value(savedFeedback.sleepScore),
                 sleepFactors: Value(
@@ -121,6 +128,7 @@ class DriftDreamRepository implements DreamRepository {
       id: row.dreamDate,
       dreamDate: DateTime.parse(row.dreamDate),
       content: row.content,
+      images: DreamImage.decode(row.images),
       feedback: DailyFeedback(
         mood: DreamMood.values
             .where((e) => e.name == row.dreamMood)

@@ -14,7 +14,8 @@ class MainBottomNavigation extends ConsumerWidget {
 
   Future<void> _select(BuildContext context, WidgetRef ref, int index) async {
     if (index == selectedIndex ||
-        ref.read(dreamEditorControllerProvider).isAdvancing) {
+        (ref.read(dreamEditorControllerProvider).isAdvancing ||
+            ref.read(dreamEditorControllerProvider).isAddingImages)) {
       return;
     }
     final activity = ref.read(navigationActivityProvider.notifier);
@@ -51,7 +52,8 @@ class MainBottomNavigation extends ConsumerWidget {
         ref.read(navigationActivityProvider.notifier).isBusy ||
         ref.watch(
           dreamEditorControllerProvider.select(
-            (state) => state.isLoading || state.isAdvancing,
+            (state) =>
+                state.isLoading || state.isAdvancing || state.isAddingImages,
           ),
         );
     final colors = Theme.of(context).colorScheme;
