@@ -18,6 +18,7 @@
 
 ## 2. 代码与交付基线
 
+- 统计及图表现已发布到 main：功能提交 [`bca6713`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/bca6713e3988a997849d8e01e5ee7587c939e31c)，父提交 `871725d`；远程完整文件树与已验证本地版本完全一致。GitHub Actions [43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) 全部通过。本地主线已按准确 Git 对象 SHA 对齐，原提交保留在 `codex/local-sleep-feedback-statistics-20261113`。下列“等待验收／尚未上传”均为历史阶段；此次发布通过授权连接器完成。
 - 统计本地图表提交 `ccba4f6`，前一功能提交 `d436207`。本次命令行 push 遇到 GitHub 443 连接超时，改用已授权连接器发布同一文件树；不将其记为命令行 push 成功。原本地提交保留，远程父提交、内容与 CI 在交付时核验。
 - 2026-11-13 用户确认当前结果并授权将统计升级及图表调整上传 GitHub。复核断连前的最终记录：250项测试、静态分析、格式及双端调试构建均通过，iOS 已实际查看周／月／年图表。代码保持同一已验证版本，本轮只补交付文档；fetch 成功，远程主线仍为 `871725d`，无新增提交。以下“先不上传”是开发验收阶段的历史安排，已被本次授权覆盖；发布结果与 CI 另行核验，不扩大为 Android 或真机验收。
 
@@ -76,6 +77,7 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-13，远程 `bca6713` | [GitHub Actions 43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) | 依赖恢复、文案／Drift 生成、格式、静态分析及测试全部通过；远程文件树与下列本机250项测试及双端构建的版本一致，CI 本身不含原生构建或人工验收 |
 | 2026-11-12，`d436207` 上的图表验收调整 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，250 项；固定七日月分组含28／29／30／31日边界、当前组及未来排除、周逐日网格着色、月年环图保留、320宽普通／两倍／三倍字号完整显示且无横向滚动；151条中文资源语境齐全 |
 | 2026-11-12，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 最终双端通过（Gradle 25.7秒、Xcode 38.9秒）；Android 未启动或人工验收，iOS 安装及用户验收另记 |
 | 2026-11-12，同上 | `flutter --no-version-check devices`、`flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定实际设备）及窗口操作 | 原 iPhone 18 Pro／iOS 27.2 保留数据升级，实际查看周网格、周评分、月固定分组、年12个月评分及月年环图，正常字号下无需横向滑动。停在全年评分图供用户验收；未修改记录，未手工测试辅助字号／通知送达／真机，不标记最终用户验收 |

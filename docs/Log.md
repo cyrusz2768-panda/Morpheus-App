@@ -2,6 +2,7 @@
 
 ## 2026-11-13
 
+- 统计及图表已通过 GitHub 连接器发布为 [`bca6713`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/bca6713e3988a997849d8e01e5ee7587c939e31c)，父提交 `871725d`，完整文件树 `d14c8ca542f5716075794b8f869c56eff886d06a` 与本地 `d989c14` 完全一致。本地原统计、图表及交付文档提交保留在 `codex/local-sleep-feedback-statistics-20261113`，重建 Git 对象并校验准确 SHA 后将本地主线对齐远程，无内容变更或强推。GitHub Actions [43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) 已全部通过，包含依赖恢复、文案／Drift 生成、格式、分析和测试；不替代本机双端构建或人工验收。此后仅补记交付结果，未再改功能或重复构建。
 - 本地图表提交为 `ccba4f6`，前一统计提交为 `d436207`。实际 `GIT_TERMINAL_PROMPT=0 git -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=15 push origin main` 遇到 GitHub 443 连接超时，未推送成功；按已有授权改用 GitHub 连接器直接发布同一文件树，保留本地原提交，不强推、不创建 PR。发布前再次核对远程基线，发布后核对完整文件树与 CI。
 - 用户确认当前结果并授权上传统计升级及图表调整。核对断连后工作区，12个预期文件完整保留，最终250项测试、静态分析、格式、双端构建与 iOS 图表窗口操作证据齐全；没有新增代码改动，沿用2026-11-12同一代码版本的验证，不重复构建或将断连当作测试失败。
 - 发布前命令行 `git -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=15 fetch origin` 成功；连接器及本地远程引用均确认 main 仍为 `871725d`，无远程新增提交。按授权整合本地统计功能提交 `d436207` 与本次图表调整，直接交付 main，不创建 PR；实际远程发布和 CI 在交付时核验。
