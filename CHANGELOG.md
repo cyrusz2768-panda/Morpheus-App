@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+图片附件及展开布局已通过授权连接器发布为 [`821d8d3`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/821d8d33e7038dfe2c39eed3238b8722a48f5b31)，完整文件树与已验证本地版本一致，[GitHub Actions 43377967034](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43377967034)全部通过。中文资源159条已审校；命令行push因缺少HTTPS登录凭据失败，本次不将连接器发布记为命令行push成功。
+
 2026-11-13 用户确认图片附件与完整展开布局的 iOS 模拟器验收通过，授权上传 GitHub。基线 `53d0236`，最终270项测试、格式、分析及双端调试构建通过；159条中文资源完成审校。Android本轮仅构建，真机未验收。以下“先验收、不上传”为开发阶段安排，现已获发布授权。
 
 2026-11-13 用户确认当前统计结果并授权上传；最终250项测试、静态分析、格式与双端调试构建通过，iOS 已查看三种周期图表。已通过授权连接器发布为 `bca6713`，完整文件树核对一致，[GitHub Actions 43345986001](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43345986001) 全部通过。Android 人工验收与真机验证未执行。
