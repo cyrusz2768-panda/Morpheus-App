@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-12。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-13。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -17,6 +17,13 @@
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
 
 ## 2. 代码与交付基线
+
+- 统计本地图表提交 `ccba4f6`，前一功能提交 `d436207`。本次命令行 push 遇到 GitHub 443 连接超时，改用已授权连接器发布同一文件树；不将其记为命令行 push 成功。原本地提交保留，远程父提交、内容与 CI 在交付时核验。
+- 2026-11-13 用户确认当前结果并授权将统计升级及图表调整上传 GitHub。复核断连前的最终记录：250项测试、静态分析、格式及双端调试构建均通过，iOS 已实际查看周／月／年图表。代码保持同一已验证版本，本轮只补交付文档；fetch 成功，远程主线仍为 `871725d`，无新增提交。以下“先不上传”是开发验收阶段的历史安排，已被本次授权覆盖；发布结果与 CI 另行核验，不扩大为 Android 或真机验收。
+
+- 2026-11-12 在本地 `d436207` 上继续调整统计验收反馈：月评分改为从1日起固定七日分组；三种周期折线图适应卡片宽度，不横向滚动；周状态改为“星期 × 四种状态”着色网格，未填及未来留空，月年仍为环图。工作区开始时干净；命令行 fetch 遇到网络低速超时，授权连接器确认远程 main 仍为 `871725d`。本轮继续仅本地开发，等待 iOS 用户验收，不上传。
+
+- 2026-11-12 本轮统计升级基于 `871725d`，工作区开始时干净，fetch 确认与 `origin/main` 一致。按用户要求先本地开发、测试并打开 iOS 模拟器供验收，暂不上传。新增状态图与定性总结、评分均值和趋势、前三因素摘要。用户追加不展示天数或次数，故移除旧天数／覆盖率／记录趋势／周末指标界面；“没做梦”经用户确认单列蓝灰色，“未填写状态”保留灰色。
 
 - 每日记录与文字库已通过连接器发布为 `ab8bbec`，父提交 `0c3a00a`，远程文件树与本地 `8c87b22` 完全一致；本地原提交保留在 `codex/local-daily-record-upgrade`。发布后命令行 fetch 恢复成功，本地 main 已对齐该远程提交。
 - 首次 [CI 43186106432](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43186106432) 在分析阶段失败：工作流自动选用了 Flutter 3.50.0，全项目原有 Material 导入及生成本地化类出现 29 条弃用提示，测试步骤未执行。现将 CI 固定到双端构建已验收的 Flutter 3.47.7，不升级 App 依赖或迁移组件；修复提交 `32304e3` 的 [CI 43187115680](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43187115680) 已全部通过，包含 214 项测试；首次失败记录保留。
@@ -51,14 +58,14 @@
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
 | 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
-| 周月年统计 | 记录天数、覆盖率、周末／平日比例、趋势及上期对比，按梦境所属日期实时派生；`lib/features/dream_statistics/`，见 [统计说明](STATISTICS_GUIDE.md) |
+| 周月年统计 | 周状态着色网格、月年五类环图，定性分析／比例、评分均值／整宽趋势、前三因素摘要；不直接显示天数／次数；`lib/features/dream_statistics/`，见 [统计说明](STATISTICS_GUIDE.md) |
 | 底部导航 | 实色圆角「记录、统计、日历」；选日回记录，切页先保存，通知撤销旧导航意图；`lib/app/main_bottom_navigation.dart` |
 | 侧边菜单 | 左上角菜单，82% 屏宽抽屉，带铃铛的“通知设置”；`dream_editor/presentation/widgets/` |
 | 首次引导 | 菜单入口教学 `menuHintSeen` 和通知授权说明 `noticeSeen` 独立，首次教学不请求系统权限 |
 | 每日提醒 | 分组卡片、独立消息通知开关、开启后展开时间、可延后授权与按需系统设置、点击回当天；`lib/features/reminders/` |
 | 每周统计回顾 | 默认关闭、周日 21:00，独立星期/时间与开关；点击打开最新自然周，见 [回顾通知说明](WEEKLY_REVIEW_GUIDE.md) |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 143 条中文 ARB，含每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 151 条中文 ARB，含每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
 存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白视为无正文；状态或睡眠反馈独立保留，无正文反馈也进入历史与月历。仅有完成标记的全跳过日期不展示历史圆点。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。
@@ -69,6 +76,12 @@
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|
+| 2026-11-12，`d436207` 上的图表验收调整 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，250 项；固定七日月分组含28／29／30／31日边界、当前组及未来排除、周逐日网格着色、月年环图保留、320宽普通／两倍／三倍字号完整显示且无横向滚动；151条中文资源语境齐全 |
+| 2026-11-12，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 最终双端通过（Gradle 25.7秒、Xcode 38.9秒）；Android 未启动或人工验收，iOS 安装及用户验收另记 |
+| 2026-11-12，同上 | `flutter --no-version-check devices`、`flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定实际设备）及窗口操作 | 原 iPhone 18 Pro／iOS 27.2 保留数据升级，实际查看周网格、周评分、月固定分组、年12个月评分及月年环图，正常字号下无需横向滑动。停在全年评分图供用户验收；未修改记录，未手工测试辅助字号／通知送达／真机，不标记最终用户验收 |
+| 2026-11-12，`871725d` 上的统计升级工作区 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，235 项；覆盖状态比例／定性边界、独立评分均值与缺口、前三因素和不确定、SQLite 更新／重开／错误、注入文案、窄屏大字号及回顾通知复用；148 条资源均有语境说明，无 schema 或依赖变化 |
+| 2026-11-12，同上 | `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub` | 双端通过（Gradle 39.7 秒、Xcode 98.7 秒）；Android 未启动或人工验收，iOS 安装及用户验收另记 |
+| 2026-11-12，同上 | `flutter --no-version-check devices`、`flutter --no-version-check run --no-pub --use-application-binary=build/ios/iphonesimulator/Runner.app`（指定实际设备）与窗口操作 | 原 iPhone 18 Pro／iOS 27.2 保留数据升级运行，实际点击统计底栏，确认新版状态总结／图例、评分与因素区域显示，窗口留给用户。本轮未修改模拟器反馈、未手工逐项测试月年或系统通知，用户最终验收及真机验证待确认 |
 | 2026-11-12，远程 `32304e3` | [GitHub Actions 43187115680](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43187115680)，Flutter 3.47.7 | 依赖恢复、文案／Drift 生成、格式、静态分析及 214 项测试全部通过；CI 不包含原生双端构建或人工验收 |
 | 2026-11-12，`a5c037c` 上的验收后文字库收尾 | `flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded` | 全部通过，214 项；143 条 ARB 无重复键、语境说明齐全，新增注入资源验证状态／因素名、分隔符、评分与摘要句式。不改中文显示，未重复双端构建或操作模拟器，沿用下列同日功能构建结果 |
 | 2026-11-12，`a5c037c` | 用户确认“ok，没问题，上传github吧，然后合并新加入的文字到文字库” | 每日记录 iOS 模拟器用户验收通过，并授权双端源码及文字库同步主线；未新增逐项操作清单，不扩展 Android 或真机验收 |
@@ -117,7 +130,7 @@ M1 原计划的逐项审计：
 ## 5. 已知边界与待办
 
 - 统计与底栏已由用户在 iPhone 18 Pro 模拟器验收通过，按约定补齐 31 条新增文案及资源接线；本轮延后同步的临时例外已收尾，后续仍默认随功能维护 ARB。
-- 已有好梦／噩梦等状态和睡眠反馈字段，本轮统计仍按非空正文计天，分类比例／评分／因素统计后续开发；周末仅指周六／周日，不含法定调休。
+- 本轮已接入状态比例、主观评分与因素摘要；旧天数指标不再展示。反馈与正文独立，未填状态不推断、未评分不记 0 分。2026-11-13 用户确认当前结果并授权上传；Android 人工验收、真机与真实通知验证仍未执行。
 
 优先收尾：
 

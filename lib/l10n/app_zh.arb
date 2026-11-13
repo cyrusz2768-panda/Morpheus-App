@@ -464,118 +464,6 @@
   "@statisticsLoadFailed": {
     "description": "统计查询或实时订阅失败；不能显示为零记录"
   },
-  "statisticsDateNote": "按梦境所属日期统计，每天最多计一次。补记、修改与删除会自动更新。",
-  "@statisticsDateNote": {
-    "description": "统计页底部解释日期归属与更新规则"
-  },
-  "statisticsComparison": "{direction, select, more{较上期多 {days} 天} less{较上期少 {days} 天} other{与上期持平}}",
-  "@statisticsComparison": {
-    "description": "完整上期对比句子；direction 为 more/less/equal，days 为差值绝对值",
-    "placeholders": {
-      "direction": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "statisticsRecordedDaysLabel": "记录天数",
-  "@statisticsRecordedDaysLabel": {
-    "description": "统计摘要卡的记录天数标题"
-  },
-  "statisticsDayCount": "{days} 天",
-  "@statisticsDayCount": {
-    "description": "统计摘要卡记录天数及单位",
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "statisticsCoverageSummary": "记录覆盖率 {percent}% · 已经过 {days} 天",
-  "@statisticsCoverageSummary": {
-    "description": "统计摘要的覆盖率与截至今天的天数；percent 为不含百分号的整数文本",
-    "placeholders": {
-      "percent": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "statisticsComparisonNote": "当前周期只计截至今天的日期，并与上期相同天数比较；上期较短时取全期。历史周期比较完整周期。",
-  "@statisticsComparisonNote": {
-    "description": "解释当前周期及历史周期的上期比较口径"
-  },
-  "statisticsTrendTitle": "记录趋势",
-  "@statisticsTrendTitle": {
-    "description": "趋势图卡标题"
-  },
-  "statisticsTrendDescription": "{period, select, week{每天是否留下梦境记录} month{按周汇总记录天数，首尾按本月裁切} other{每月的记录天数}}",
-  "@statisticsTrendDescription": {
-    "description": "趋势图分桶说明；period 为 week/month/year",
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "statisticsEmpty": "这个周期还没有记录。记下一个梦，回顾就从这里开始。",
-  "@statisticsEmpty": {
-    "description": "当前浏览周期没有有效记录时的提示"
-  },
-  "statisticsDayTypeTitle": "周末 / 平日",
-  "@statisticsDayTypeTitle": {
-    "description": "双休日与平日占比卡标题"
-  },
-  "statisticsShareDescription": "占本周期记录天数的比例",
-  "@statisticsShareDescription": {
-    "description": "说明占比以有记录天数为分母"
-  },
-  "statisticsWeekend": "双休日",
-  "@statisticsWeekend": {
-    "description": "占比行标签：周六及周日"
-  },
-  "statisticsWeekday": "平日",
-  "@statisticsWeekday": {
-    "description": "占比行标签：周一至周五"
-  },
-  "statisticsDayTypeNote": "双休日为周六、周日；平日为周一至周五，不按法定节假日或调休调整。",
-  "@statisticsDayTypeNote": {
-    "description": "解释统计中双休日和平日的定义"
-  },
-  "statisticsBucketSemantics": "{start}至{end}，{isFuture, select, true{尚未开始} other{记录{days}天}}",
-  "@statisticsBucketSemantics": {
-    "description": "趋势柱完整读屏标签；未来分桶不当作零记录，isFuture 为 true/false；start/end 已格式化",
-    "placeholders": {
-      "start": {
-        "type": "String"
-      },
-      "end": {
-        "type": "String"
-      },
-      "isFuture": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "statisticsBucketCount": "{isFuture, select, true{—} other{{days}}}",
-  "@statisticsBucketCount": {
-    "description": "趋势柱上方数值，未来分桶显示破折号；isFuture 为 true/false",
-    "placeholders": {
-      "isFuture": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "statisticsDayRange": "{start}–{end}",
   "@statisticsDayRange": {
     "description": "月趋势图横轴的本月日数范围，首尾周可不足七天",
@@ -588,26 +476,11 @@
       }
     }
   },
-  "statisticsMonthTick": "{month}月",
+  "statisticsMonthTick": "{month}",
   "@statisticsMonthTick": {
-    "description": "年趋势图横轴的月份短标签",
+    "description": "全年评分图的紧凑月份刻度，只显示1至12，完整年月保留在读屏提示",
     "placeholders": {
       "month": {
-        "type": "int"
-      }
-    }
-  },
-  "statisticsShareSummary": "{days} 天 · {hasRecords, select, true{{percent}%} other{—}}",
-  "@statisticsShareSummary": {
-    "description": "双休日或平日的完整天数与占比；无记录时占比未知，hasRecords 为 true/false；percent 为互补取整百分比",
-    "placeholders": {
-      "days": {
-        "type": "int"
-      },
-      "hasRecords": {
-        "type": "String"
-      },
-      "percent": {
         "type": "int"
       }
     }
@@ -752,5 +625,213 @@
   "dailyFactorsSeparator": "、",
   "@dailyFactorsSeparator": {
     "description": "完成页及历史摘要中，多项已选睡眠影响因素之间的分隔符；可按语言习惯调整，不用于存储标识"
+  },
+  "statisticsMoodTitle": "梦境状态",
+  "@statisticsMoodTitle": {
+    "description": "统计中的状态分布标题"
+  },
+  "statisticsMoodChartNote": "图表涵盖本期已过的夜晚；未填写状态显示为灰色。",
+  "@statisticsMoodChartNote": {
+    "description": "状态图分母与缺失状态说明，不报告记录天数"
+  },
+  "statisticsStatusLabel": "{category, select, good{好梦} nightmare{噩梦} forgotten{没记住} noDream{没做梦} other{未填写状态}}",
+  "@statisticsStatusLabel": {
+    "description": "状态图图例；unfilled 包含缺行、跳过或旧版没有状态的记录",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsMoodInsight": "{scope}{insight, select, allGood{已分类的梦境都是好梦。} allNightmare{已分类的梦境都是噩梦。} similar{已分类的梦境中，做好梦与做噩梦的频率差不多。} mostlyGood{已分类的梦境中，好梦占多数。} mostlyNightmare{已分类的梦境中，噩梦占多数。} other{还没有明确的好梦或噩梦反馈。}}",
+  "@statisticsMoodInsight": {
+    "description": "完整定性句；只比较明确的好梦噩梦，40%-60%为差不多，不从正文推断情绪",
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      },
+      "insight": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsReviewScope": "{isCurrent, select, true{{period, select, week{本周} month{这个月} other{今年}}} other{{period, select, week{这一周} month{这个月} other{这一年}}}}",
+  "@statisticsReviewScope": {
+    "description": "定性总结周期称呼；浏览历史时不误称本周或今年",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "isCurrent": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsDreamRatio": "好梦 {goodPercent}% · 噩梦 {nightmarePercent}%",
+  "@statisticsDreamRatio": {
+    "description": "只在好梦噩梦至少有一项填写时显示的比例，不展示次数",
+    "placeholders": {
+      "goodPercent": {
+        "type": "int"
+      },
+      "nightmarePercent": {
+        "type": "int"
+      }
+    }
+  },
+  "statisticsDreamRatioNote": "好梦／噩梦比例仅比较这两种已填写状态。",
+  "@statisticsDreamRatioNote": {
+    "description": "避免把忘记、没做梦或未填写算入好梦噩梦比较"
+  },
+  "statisticsStatusSemantics": "{label}，{hasData, select, true{占比 {percent}%} other{尚无可统计的状态}}",
+  "@statisticsStatusSemantics": {
+    "description": "状态图读屏比例，hasData为false时不拼接百分号，不报告次数或天数",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "hasData": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsScoreTitle": "睡眠自评",
+  "@statisticsScoreTitle": {
+    "description": "主观睡眠评分统计标题"
+  },
+  "statisticsAverageScoreLabel": "平均分",
+  "@statisticsAverageScoreLabel": {
+    "description": "已填写睡眠评分的每日值均值"
+  },
+  "statisticsAverageScore": "{score} / 5 分",
+  "@statisticsAverageScore": {
+    "description": "一位小数的主观评分均值，score 是已格式化字符串",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsScoreEmpty": "尚未填写睡眠评分",
+  "@statisticsScoreEmpty": {
+    "description": "零评分样本时显示未知，不用0分代替"
+  },
+  "statisticsScoreTrendTitle": "评分趋势",
+  "@statisticsScoreTrendTitle": {
+    "description": "主观评分趋势图标题"
+  },
+  "statisticsScoreTrendNote": "{period, select, week{每天的睡眠自评分} month{从1日开始每7天一组，月尾按实际日期收尾} other{每月的平均睡眠自评分}}",
+  "@statisticsScoreTrendNote": {
+    "description": "周按日、月固定1–7/8–14等分组、年按月；图表不横向滚动",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsScoreNote": "只计算已填写的 1–5 分；未填写的位置留空，不按 0 分计算。",
+  "@statisticsScoreNote": {
+    "description": "说明均值和缺失数据的处理，不展示样本天数"
+  },
+  "statisticsScoreBucketSemantics": "{start}至{end}，{value}",
+  "@statisticsScoreBucketSemantics": {
+    "description": "评分图读屏日期范围与评分；无评分value使用未填写",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsFactorsTitle": "影响因素",
+  "@statisticsFactorsTitle": {
+    "description": "主观影响因素前三项摘要标题"
+  },
+  "statisticsFactorsSummary": "{scope}{count, plural, =0{尚未填写影响因素。} =1{你认为对睡眠影响较大的是{first}。} =2{你认为对睡眠影响较大的是{first}和{second}。} other{你认为对睡眠影响较大的是{first}、{second}和{third}。}}",
+  "@statisticsFactorsSummary": {
+    "description": "因素选择频次最多的最多三项完整句；不足三项不补齐，界面不展示次数",
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      },
+      "third": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsFactorsNote": "根据你在本期选择较多的因素整理。",
+  "@statisticsFactorsNote": {
+    "description": "表明来自用户主观反馈，不推断客观因果"
+  },
+  "statisticsUnknownValue": "—",
+  "@statisticsUnknownValue": {
+    "description": "统计尚无有效评分等数值时的占位符，不表示0"
+  },
+  "statisticsFutureScore": "尚未开始",
+  "@statisticsFutureScore": {
+    "description": "评分趋势中未来日期或月份的读屏状态，区别于已经过但未填写"
+  },
+  "statisticsFactorsUncertainSummary": "{scope}{count, plural, =0{你还不确定哪些因素影响了睡眠。} =1{你选择较多的因素是{first}；同时也有不确定的反馈。} other{你选择较多的因素是{first}和{second}；同时也有不确定的反馈。}}",
+  "@statisticsFactorsUncertainSummary": {
+    "description": "前三项包含不确定时的主观摘要，count是其中具体因素数，不把不确定称为影响因素",
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsWeekMoodChartNote": "每列对应一天，颜色表示当天状态；未填写和未来日期留空。",
+  "@statisticsWeekMoodChartNote": {
+    "description": "周状态网格说明，区别于月年环图"
+  },
+  "statisticsWeekStatusSemantics": "{date}，星期{weekday}，{status}",
+  "@statisticsWeekStatusSemantics": {
+    "description": "周状态网格每列读屏，完整日期、星期和状态，不报告次数",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "weekday": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "statisticsScoreAxisLabel": "{score}",
+  "@statisticsScoreAxisLabel": {
+    "description": "评分趋势固定1至5纵轴数字",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
   }
 }

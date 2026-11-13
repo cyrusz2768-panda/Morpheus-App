@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
 import '../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/reminders/data/reminder_notifications.dart';
@@ -63,14 +64,14 @@ void main() {
       .controller!
       .text;
 
-  testWidgets('底栏先保存最新草稿；修改不增天数、清空删除更新统计', (tester) async {
+  testWidgets('底栏先保存最新草稿；修改和清空后仍可查看反馈统计', (tester) async {
     await show(tester);
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
       '人工测试梦境',
     );
     await tab(tester, 'statistics');
-    expect(find.text('1 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
     expect((await repository.getByDate(DateTime.now()))!.content, '人工测试梦境');
     await tab(tester, 'record');
     expect(text(tester), '人工测试梦境');
@@ -79,16 +80,16 @@ void main() {
       '修改后的人工测试梦境',
     );
     await tab(tester, 'statistics');
-    expect(find.byKey(const Key('statistics-recorded-days')), findsOneWidget);
-    expect(find.text('1 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-status-chart')), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
     await tab(tester, 'record');
     await tester.enterText(
       find.byKey(const Key('dream-content-field')),
       '\n\t　',
     );
     await tab(tester, 'statistics');
-    expect(find.text('0 天'), findsOneWidget);
-    expect(find.byKey(const Key('statistics-empty')), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
     expect(await repository.getByDate(DateTime.now()), isNull);
   });
 
@@ -125,7 +126,7 @@ void main() {
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
     await tab(tester, 'statistics');
-    expect(find.text('1 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
   });
 
   testWidgets('底栏日历选日回记录，补记归属旧月而非今天', (tester) async {
@@ -148,11 +149,11 @@ void main() {
     await tester.tap(find.text('月'));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
-    expect(find.text('0 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
     await tester.tap(find.byKey(const Key('statistics-previous')));
     await tester.pumpAndSettle();
     await openDreamTextIfPrompted(tester);
-    expect(find.text('1 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
   });
 
   for (final name in ['statistics', 'calendar']) {
@@ -240,7 +241,7 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('statistics-range'))).data,
       currentWeekRange(),
     );
-    expect(find.text('1 天'), findsOneWidget);
+    expect(find.byKey(const Key('statistics-mood-insight')), findsOneWidget);
   });
 
   testWidgets('统计页月历史浏览收到回顾通知强制刷新最新周，重复点击也有效', (tester) async {
@@ -327,6 +328,43 @@ void main() {
     });
   }
 
+  testWidgets('每周回顾复用状态比例、评分趋势和因素摘要，反馈无需正文', (tester) async {
+    await repository.save(
+      date: DateTime.now(),
+      content: '',
+      feedback: const DailyFeedback(
+        mood: DreamMood.nightmare,
+        sleepScore: 3,
+        factors: {SleepFactor.screen, SleepFactor.stress},
+      ),
+    );
+    await show(tester);
+    notifications.onTap!(ReminderDestination.weeklyStatistics);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('statistics-status-chart')), findsOneWidget);
+    expect(find.textContaining('都是噩梦。'), findsOneWidget);
+    expect(find.text('好梦 0% · 噩梦 100%'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('statistics-score-average')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('statistics-score-average')))
+          .data,
+      '3.0 / 5 分',
+    );
+    expect(find.byKey(const Key('statistics-score-chart')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('statistics-factors-summary')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('本周你认为对睡眠影响较大的是压力和睡前屏幕。'), findsOneWidget);
+    expect(find.text('记录天数'), findsNothing);
+  });
+
   testWidgets('回顾冷启动在编辑器加载后打开最新周', (tester) async {
     notifications.launchedFromNotification = true;
     notifications.launchDestination = ReminderDestination.weeklyStatistics;
@@ -359,8 +397,22 @@ class _Projection implements IStatisticsRepository, ICalendarRepository {
   _Projection(this.repository);
   final InMemoryDreamRepository repository;
   @override
+  Stream<List<StatisticsRecord>> watchRecords(StatisticsWindow window) async* {
+    yield (await repository.getAll())
+        .map(
+          (entry) => StatisticsRecord(
+            date: entry.dreamDate,
+            hasContent: entry.content.trim().isNotEmpty,
+            feedback: entry.feedback,
+          ),
+        )
+        .toList();
+  }
+
+  @override
   Stream<Set<String>> watchRecordedDates(StatisticsWindow window) async* {
     yield (await repository.getAll())
+        .where((entry) => entry.content.trim().isNotEmpty)
         .map((entry) => DreamEntry.dateKey(entry.dreamDate))
         .toSet();
   }

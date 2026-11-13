@@ -1,3 +1,5 @@
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
+import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:drift/native.dart';
@@ -98,5 +100,114 @@ void main() {
         )
         .first;
     expect(dates, {'2025-12-31'});
+  });
+  test('反馈投影实时更新，独立评分/因素无需正文，清除后不留旧值', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final editor = DriftDreamRepository(database);
+    final window = StatisticsWindow(
+      StatisticsPeriod.week,
+      DateTime(2026, 11, 12),
+    );
+    final iterator = StreamIterator(
+      DriftStatisticsRepository(database).watchRecords(window),
+    );
+    addTearDown(iterator.cancel);
+    Future<List<StatisticsRecord>> next() async {
+      expect(
+        await iterator.moveNext().timeout(const Duration(seconds: 10)),
+        isTrue,
+      );
+      return iterator.current;
+    }
+
+    expect(await next(), isEmpty);
+    final date = DateTime(2026, 11, 12);
+    await editor.save(
+      date: date,
+      content: '',
+      feedback: const DailyFeedback(
+        sleepScore: 4,
+        factors: {SleepFactor.stress},
+      ),
+    );
+    final first = (await next()).single;
+    expect(first.hasContent, isFalse);
+    expect(first.feedback.mood, isNull);
+    expect(first.feedback.sleepScore, 4);
+    expect(first.feedback.factors, {SleepFactor.stress});
+    await editor.save(
+      date: date,
+      content: '',
+      feedback: const DailyFeedback(mood: DreamMood.noDream),
+    );
+    final updated = (await next()).single;
+    expect(updated.feedback.sleepScore, isNull);
+    expect(updated.feedback.factors, isEmpty);
+    expect(updated.feedback.mood, DreamMood.noDream);
+    await editor.deleteByDate(date);
+    expect(await next(), isEmpty);
+  });
+
+  test('反馈关闭重开真实文件恢复，范围边界准确且不携带原文', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'morpheus_sleep_statistics_',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/feedback.sqlite');
+    final first = AppDatabase(NativeDatabase(file));
+    final editor = DriftDreamRepository(first);
+    for (final date in [
+      DateTime(2025, 12, 31),
+      DateTime(2026, 1, 1),
+      DateTime(2026, 11, 12),
+      DateTime(2027, 1, 1),
+    ]) {
+      await editor.save(
+        date: date,
+        content: '',
+        feedback: const DailyFeedback(
+          mood: DreamMood.good,
+          sleepScore: 5,
+          factors: {SleepFactor.emotion},
+        ),
+      );
+    }
+    await first.close();
+    final second = AppDatabase(NativeDatabase(file));
+    addTearDown(second.close);
+    final records = await DriftStatisticsRepository(second)
+        .watchRecords(StatisticsWindow(StatisticsPeriod.year, DateTime(2026)))
+        .first;
+    expect(records, hasLength(3)); // 包含上期，不含下一年；领域层再截取本期和今天。
+    expect(records.every((r) => !r.hasContent), isTrue);
+    final result = SleepFeedbackStatistics(
+      window: StatisticsWindow(StatisticsPeriod.year, DateTime(2026)),
+      records: records,
+      today: DateTime(2026, 11, 12),
+    );
+    expect(result.goodCount, 2);
+    expect(result.averageScore, 5);
+    expect(result.topFactors, [SleepFactor.emotion]);
+    expect(() => records.clear(), throwsUnsupportedError);
+  });
+
+  test('损坏的因素JSON上报读取失败，不伪装空反馈', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await DriftDreamRepository(
+      database,
+    ).save(date: DateTime(2026, 11, 12), content: '人工测试正文');
+    await database.customStatement(
+      "UPDATE dream_records SET sleep_factors = 'broken json'",
+    );
+    await expectLater(
+      DriftStatisticsRepository(database)
+          .watchRecords(
+            StatisticsWindow(StatisticsPeriod.week, DateTime(2026, 11, 12)),
+          )
+          .first,
+      throwsA(isA<FormatException>()),
+    );
   });
 }

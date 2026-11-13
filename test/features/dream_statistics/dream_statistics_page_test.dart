@@ -5,10 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:morpheus/app/theme.dart';
 import 'package:morpheus/features/dream_editor/application/dream_editor_controller.dart';
 import 'package:morpheus/features/dream_editor/data/in_memory_dream_repository.dart';
+import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/dream_statistics/application/statistics_provider.dart';
 import 'package:morpheus/features/dream_statistics/data/statistics_repository.dart';
 import 'package:morpheus/features/dream_statistics/domain/dream_statistics.dart';
+import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
 import 'package:morpheus/features/dream_statistics/presentation/dream_statistics_page.dart';
+import 'package:morpheus/features/dream_statistics/presentation/feedback_statistics_content.dart';
 import 'package:morpheus/l10n/app_text.dart';
 import 'package:morpheus/l10n/generated/app_localizations_zh.dart';
 
@@ -16,10 +19,10 @@ void main() {
   late _Repository repository;
   setUp(() => repository = _Repository());
   tearDown(() => repository.changes.close());
-
   Future<void> show(
     WidgetTester tester, {
     double scale = 1,
+    DateTime? today,
     AppLocalizations? resources,
   }) async {
     await tester.pumpWidget(
@@ -42,7 +45,7 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
           ),
-          home: DreamStatisticsPage(now: () => DateTime(2026, 11, 10)),
+          home: DreamStatisticsPage(now: () => today ?? DateTime(2026, 11, 10)),
         ),
       ),
     );
@@ -53,41 +56,102 @@ void main() {
     });
   }
 
-  testWidgets('空周期显示空态和无占比，不出现NaN或虚构分类', (tester) async {
-    await show(tester);
-    expect(find.text('0 天'), findsOneWidget);
-    expect(find.byKey(const Key('statistics-empty')), findsOneWidget);
+  Future<void> scroll(WidgetTester tester, String key) async {
     await tester.scrollUntilVisible(
-      find.text('双休日'),
+      find.byKey(Key(key)),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('0 天 · —'), findsNWidgets(2));
-    expect(find.textContaining('NaN'), findsNothing);
-    expect(find.textContaining('噩梦'), findsNothing);
-  });
+    await tester.pumpAndSettle();
+  }
 
-  testWidgets('统计动态文案、读屏标签与底栏均从注入资源读取', (tester) async {
-    repository.dates = {'2026-11-09'};
-    await show(tester, resources: _StatisticsResources());
-    expect(find.text('test statistics'), findsOneWidget);
-    expect(find.text('test record'), findsOneWidget);
-    expect(find.text('test summary'), findsOneWidget);
-    expect(find.text('test calendar'), findsOneWidget);
-    expect(find.text('test days 1'), findsOneWidget);
-    expect(find.text('test comparison more 1'), findsOneWidget);
+  StatisticsRecord record(
+    int day, {
+    DreamMood? mood,
+    int? score,
+    Set<SleepFactor> factors = const {},
+  }) => StatisticsRecord(
+    date: DateTime(2026, 11, day),
+    hasContent: false,
+    feedback: DailyFeedback(mood: mood, sleepScore: score, factors: factors),
+  );
+
+  testWidgets('空周期为灰色未知，评分不是0，不展示记录天数或次数', (tester) async {
+    await show(tester);
+    expect(find.textContaining('还没有明确的好梦或噩梦反馈'), findsOneWidget);
     expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.label ==
-                'test bucket 2026.11.9 / 2026.11.9 / false / 1',
-      ),
+      find.byKey(const Key('statistics-week-status-grid')),
       findsOneWidget,
     );
+    final cells = tester.widgetList<Container>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.key.toString().contains('statistics-week-cell-'),
+      ),
+    );
+    expect(cells, hasLength(28));
+    expect(
+      cells.every(
+        (cell) =>
+            (cell.decoration! as BoxDecoration).color == Colors.transparent,
+      ),
+      isTrue,
+    );
+    expect(find.text('记录天数'), findsNothing);
+    expect(find.textContaining(' 天'), findsNothing);
+    expect(find.byKey(const Key('statistics-dream-ratio')), findsNothing);
+    await scroll(tester, 'statistics-score-average');
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('statistics-score-average')))
+          .data,
+      '—',
+    );
+    expect(find.textContaining('NaN'), findsNothing);
+    await scroll(tester, 'statistics-factors-summary');
+    expect(find.textContaining('尚未填写影响因素。'), findsOneWidget);
   });
-
-  testWidgets('月年切换和翻期正确，未来周期禁用，返回本期', (tester) async {
+  testWidgets('五类颜色分开，比例互补，定性只依据显式状态', (tester) async {
+    repository.records = [
+      record(9, mood: DreamMood.good),
+      record(10, mood: DreamMood.nightmare),
+    ];
+    await show(tester);
+    expect(find.textContaining('频率差不多。'), findsOneWidget);
+    expect(find.text('好梦 50% · 噩梦 50%'), findsOneWidget);
+    expect(
+      statusColor(DreamStatusCategory.noDream),
+      isNot(statusColor(DreamStatusCategory.unfilled)),
+    );
+    expect(DreamStatusCategory.values.map(statusColor).toSet(), hasLength(5));
+    await tester.tap(find.text('月'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<CustomPaint>(find.byKey(const Key('statistics-status-chart')))
+          .painter,
+      isA<StatusRingPainter>(),
+    );
+    for (final category in DreamStatusCategory.values) {
+      final dot = tester.widget<Container>(
+        find.byKey(Key('statistics-status-${category.name}')),
+      );
+      expect((dot.decoration! as BoxDecoration).color, statusColor(category));
+    }
+  });
+  testWidgets('名称、定性整句、评分和因素摘要由注入资源提供', (tester) async {
+    repository.records = [
+      record(9, mood: DreamMood.good, score: 4, factors: {SleepFactor.stress}),
+    ];
+    await show(tester, resources: _StatisticsResources());
+    expect(find.text('test mood 本周 / allGood'), findsOneWidget);
+    await scroll(tester, 'statistics-score-average');
+    expect(find.text('test average 4.0'), findsOneWidget);
+    await scroll(tester, 'statistics-factors-summary');
+    expect(find.text('test factors 本周 / pressure /  / '), findsOneWidget);
+  });
+  testWidgets('月年切换、历史称呼、未来禁用和回到本期', (tester) async {
     await show(tester);
     expect(
       tester
@@ -103,100 +167,231 @@ void main() {
     expect(find.text('2026年10月'), findsOneWidget);
     await tester.tap(find.text('年'));
     await tester.pumpAndSettle();
-    expect(find.text('2026年'), findsOneWidget);
     await tester.tap(find.byKey(const Key('statistics-previous')));
     await tester.pumpAndSettle();
     expect(find.text('2025年'), findsOneWidget);
+    expect(find.textContaining('这一年还没有'), findsOneWidget);
     await tester.tap(find.byKey(const Key('statistics-current')));
     await tester.pumpAndSettle();
     expect(find.text('2026年'), findsOneWidget);
+    expect(find.textContaining('今年还没有'), findsOneWidget);
   });
-
-  testWidgets('订阅出错隐藏旧统计，重试后恢复，实时日期变更更新', (tester) async {
-    repository.dates = {'2026-11-09'};
+  testWidgets('读取失败隐藏整份旧快照，重试和修改反馈会实时更新', (tester) async {
+    repository.records = [record(9, mood: DreamMood.good, score: 5)];
     await show(tester);
-    expect(find.text('1 天'), findsOneWidget);
     repository.changes.addError(StateError('测试读取失败'));
     await tester.pumpAndSettle();
     expect(find.text('统计读取失败，请重试。'), findsOneWidget);
-    expect(find.byKey(const Key('statistics-recorded-days')), findsNothing);
+    expect(find.byKey(const Key('statistics-status-chart')), findsNothing);
+    expect(find.byKey(const Key('statistics-score-average')), findsNothing);
     await tester.tap(find.byKey(const Key('statistics-retry')));
     await tester.pumpAndSettle();
-    expect(find.text('1 天'), findsOneWidget);
-    repository.changes.add({'2026-11-09', '2026-11-10'});
+    expect(find.textContaining('都是好梦。'), findsOneWidget);
+    repository.changes.add([record(9, mood: DreamMood.nightmare, score: 1)]);
     await tester.pumpAndSettle();
-    expect(find.text('2 天'), findsOneWidget);
-  });
-
-  testWidgets('窄屏大字号年视图可滚动，无布局溢出', (tester) async {
-    tester.view.physicalSize = const Size(320, 480);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await show(tester, scale: 2);
-    await tester.tap(find.text('年'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('记录趋势'),
-      200,
-      scrollable: find.byType(Scrollable).first,
+    expect(find.textContaining('都是噩梦。'), findsOneWidget);
+    await scroll(tester, 'statistics-score-average');
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('statistics-score-average')))
+          .data,
+      '1.0 / 5 分',
     );
-    expect(tester.takeException(), isNull);
-    await tester.drag(
-      find.byType(SingleChildScrollView).last,
-      const Offset(-1500, 0),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
   });
-
-  testWidgets('比例四舍五入后仍合计100%', (tester) async {
-    repository.dates = {
-      '2026-11-01',
-      '2026-11-02',
-      '2026-11-03',
-      '2026-11-04',
-      '2026-11-05',
-      '2026-11-06',
-      '2026-11-09',
-      '2026-11-10',
-    };
+  testWidgets('因素只写前三项不列数字，少于三项不虚构', (tester) async {
+    repository.records = [
+      record(
+        9,
+        factors: {
+          SleepFactor.stress,
+          SleepFactor.emotion,
+          SleepFactor.news,
+          SleepFactor.caffeine,
+        },
+      ),
+    ];
     await show(tester);
-    await tester.tap(find.text('月'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('双休日'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('1 天 · 13%'), findsOneWidget);
-    expect(find.text('7 天 · 87%'), findsOneWidget);
+    await scroll(tester, 'statistics-factors-summary');
+    expect(find.text('本周你认为对睡眠影响较大的是压力、情绪和时事。'), findsOneWidget);
+    expect(find.text('咖啡因'), findsNothing);
+    expect(find.textContaining('次'), findsNothing);
   });
+  testWidgets('不确定反馈采用专门句式，未来评分与已过缺值读屏区分', (tester) async {
+    repository.records = [
+      record(9, factors: {SleepFactor.unsure}),
+    ];
+    await show(tester);
+    await scroll(tester, 'statistics-score-chart');
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Semantics && (w.properties.label?.contains('尚未开始') ?? false),
+      ),
+      findsWidgets,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Semantics && (w.properties.label?.contains('未填写') ?? false),
+      ),
+      findsWidgets,
+    );
+    await scroll(tester, 'statistics-factors-summary');
+    expect(find.text('本周你还不确定哪些因素影响了睡眠。'), findsOneWidget);
+    expect(find.textContaining('影响较大的是不确定'), findsNothing);
+  });
+
+  testWidgets('周状态网格按星期和状态着色，未记录与未来不着色，月年保持环图', (tester) async {
+    repository.records = [
+      record(9, mood: DreamMood.good),
+      record(10, mood: DreamMood.nightmare),
+      record(11, mood: DreamMood.forgotten),
+      record(12, mood: DreamMood.noDream),
+      record(13, mood: DreamMood.good),
+    ];
+    await show(tester, today: DateTime(2026, 11, 12));
+    for (var day = 9; day <= 15; day++) {
+      var filled = 0;
+      for (final mood in DreamMood.values) {
+        final cell = tester.widget<Container>(
+          find.byKey(Key('statistics-week-cell-2026-11-$day-${mood.name}')),
+        );
+        final color = (cell.decoration! as BoxDecoration).color;
+        final expected = day <= 12 && mood.index == day - 9;
+        expect(
+          color,
+          expected
+              ? statusColor(DreamStatusCategory.values.byName(mood.name))
+              : Colors.transparent,
+        );
+        if (color != Colors.transparent) filled++;
+      }
+      expect(filled, day <= 12 ? 1 : 0);
+    }
+    for (final period in ['月', '年']) {
+      await tester.tap(find.text(period));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('statistics-week-status-grid')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<CustomPaint>(
+              find.byKey(const Key('statistics-status-chart')),
+            )
+            .painter,
+        isA<StatusRingPainter>(),
+      );
+    }
+  });
+
+  for (final period in ['周', '月', '年']) {
+    for (final scale in [1.0, 2.0, 3.0]) {
+      testWidgets('$period 图在320宽/$scale字号下完整显示，无横向滚动', (tester) async {
+        tester.view.physicalSize = const Size(320, 480);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        repository.records = [
+          record(
+            9,
+            score: 5,
+            mood: DreamMood.good,
+            factors: {SleepFactor.stress},
+          ),
+        ];
+        await show(tester, scale: scale);
+        if (period != '周') {
+          await tester.tap(find.text(period));
+          await tester.pumpAndSettle();
+        }
+        if (period == '周') {
+          final grid = tester.getRect(
+            find.byKey(const Key('statistics-week-status-grid')),
+          );
+          expect(grid.left, greaterThanOrEqualTo(0));
+          expect(grid.right, lessThanOrEqualTo(320));
+        }
+        await scroll(tester, 'statistics-score-chart');
+        final chart = tester.getRect(
+          find.byKey(const Key('statistics-score-chart')),
+        );
+        expect(chart.left, greaterThanOrEqualTo(0));
+        expect(chart.right, lessThanOrEqualTo(320));
+        expect(
+          tester
+              .widgetList<Scrollable>(find.byType(Scrollable))
+              .where(
+                (w) =>
+                    w.axisDirection == AxisDirection.left ||
+                    w.axisDirection == AxisDirection.right,
+              ),
+          isEmpty,
+        );
+        final painter =
+            tester
+                    .widget<CustomPaint>(
+                      find.byKey(const Key('statistics-score-chart')),
+                    )
+                    .painter!
+                as ScoreTrendPainter;
+        expect(
+          painter.values,
+          hasLength(
+            period == '周'
+                ? 7
+                : period == '月'
+                ? 5
+                : 12,
+          ),
+        );
+        if (period == '月') {
+          for (final tick in ['1–7', '8–14', '15–21', '22–28', '29–30']) {
+            expect(find.text(tick), findsOneWidget);
+          }
+        }
+        await scroll(tester, 'statistics-factors-summary');
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 }
 
-/// 注入不同句式验证接线，而不是只检查中文文字恰好和页面硬编码相同。
-/// 这只用于测试，不声明应用已支持英文或运行时语言切换。
+class _Repository implements IStatisticsRepository {
+  List<StatisticsRecord> records = [];
+  final changes = StreamController<List<StatisticsRecord>>.broadcast();
+  @override
+  Stream<List<StatisticsRecord>> watchRecords(StatisticsWindow window) async* {
+    yield records;
+    yield* changes.stream;
+  }
+
+  @override
+  Stream<Set<String>> watchRecordedDates(StatisticsWindow window) =>
+      watchRecords(window).map(
+        (rows) => rows
+            .where((r) => r.hasContent)
+            .map((r) => '${r.date.year}-${r.date.month}-${r.date.day}')
+            .toSet(),
+      );
+}
+
 class _StatisticsResources extends AppLocalizationsZh {
   @override
-  String get statisticsTitle => 'test statistics';
+  String statisticsMoodInsight(String scope, String insight) =>
+      'test mood $scope / $insight';
   @override
-  String get navRecord => 'test record';
+  String statisticsAverageScore(String score) => 'test average $score';
   @override
-  String get navStatistics => 'test summary';
+  String get dailyFactorStress => 'pressure';
   @override
-  String get navCalendar => 'test calendar';
-  @override
-  String statisticsDayCount(int days) => 'test days $days';
-  @override
-  String statisticsComparison(String direction, int days) =>
-      'test comparison $direction $days';
-  @override
-  String statisticsBucketSemantics(
-    String start,
-    String end,
-    String isFuture,
-    int days,
-  ) => 'test bucket $start / $end / $isFuture / $days';
+  String statisticsFactorsSummary(
+    String scope,
+    int count,
+    String first,
+    String second,
+    String third,
+  ) => 'test factors $scope / $first / $second / $third';
 }
 
 class _ResourcesDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -208,14 +403,4 @@ class _ResourcesDelegate extends LocalizationsDelegate<AppLocalizations> {
   Future<AppLocalizations> load(Locale locale) async => resources;
   @override
   bool shouldReload(_ResourcesDelegate old) => old.resources != resources;
-}
-
-class _Repository implements IStatisticsRepository {
-  Set<String> dates = {};
-  final changes = StreamController<Set<String>>.broadcast();
-  @override
-  Stream<Set<String>> watchRecordedDates(StatisticsWindow window) async* {
-    yield dates;
-    yield* changes.stream;
-  }
 }
