@@ -2,6 +2,8 @@
 
 ## 2026-11-14
 
+- 图片导出与分享通过已授权连接器发布为[`0beb8db`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/0beb8db4e2795356b0086eb90aa70dbaac430f0a)，父提交`a5a8010`。完整树`fb8c84ba549c34051da103c46da0ed912caab30a`与本地`f9a9075`一致，188文件逐项SHA/mode匹配；检查预期旧SHA后更新main，未强推/创建PR/命令行推送。[Actions 43565751418](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43565751418)全部通过。本地原历史保留在`codex/dream-image-export`，main已对齐远程准确对象。此后仅补发布记录，再核对最终远程树与CI；未重新构建或操作模拟器，沿用`4becaec`验收证据。
+
 - 用户确认图片导出分享及右侧二维码布局“没问题，上传吧”，记录为`4becaec`的iOS模拟器用户验收通过并授权发布。沿用315项测试、格式、分析及双端调试构建，不扩大Android/真机验收；本轮只补交付文档与文案审校。195条资源无重复、语境齐全，分享23项已接线，仍仅中文。起始工作区干净，连接器确认远程main为`a5a8010`，无新增提交；本地整合main后通过连接器发布一致文件树，核验远程与CI，不使用命令行推送。
 
 - 二维码调整最终检查通过：`flutter --no-version-check gen-l10n`、格式（98文件）、静态分析、完整315项测试（分享12项）及双端调试构建（Android17.9秒、iOS25.1秒）。实际命令同项目状态本轮验证记录。人工PNG的3码由macOS Vision独立成功解码，URL与中文/emoji摘要正确；图片仅在本机临时目录，不入库。没有依赖/schema变化，195条资源均有语境。Android人工验收、真机相机/第三方App仍未执行，不将独立解码或构建当作用户验收。
