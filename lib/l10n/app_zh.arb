@@ -865,5 +865,57 @@
   "imageOnlySummary": "图片记录",
   "@imageOnlySummary": {
     "description": "历史列表只有图片且无正文或反馈时的摘要"
+  },
+  "addWebLink": "添加网页链接",
+  "@addWebLink": {
+    "description": "加号附件菜单第二行，打开网页链接输入框"
+  },
+  "addMusicLink": "添加音乐链接",
+  "@addMusicLink": {
+    "description": "加号附件菜单第三行，音乐优先尝试外部音乐软件"
+  },
+  "editLink": "修改链接",
+  "@editLink": {
+    "description": "链接卡片操作菜单及修改对话框标题"
+  },
+  "deleteLink": "删除链接",
+  "@deleteLink": {
+    "description": "链接操作菜单，从当日记录移除附件"
+  },
+  "openLink": "打开链接",
+  "@openLink": {
+    "description": "链接卡片操作菜单，先等待草稿保存再打开"
+  },
+  "linkOptions": "链接操作",
+  "@linkOptions": {
+    "description": "链接卡片右侧更多按钮的读屏提示"
+  },
+  "linkUrlLabel": "链接",
+  "@linkUrlLabel": {
+    "description": "添加或修改链接对话框必填地址标签"
+  },
+  "linkUrlHint": "example.com 或 https://example.com",
+  "@linkUrlHint": {
+    "description": "网页及音乐链接输入示例，允许省略协议和www；只在打开/保存附件时补https"
+  },
+  "linkTitleLabel": "标题（可选）",
+  "@linkTitleLabel": {
+    "description": "链接对话框的可选标题字段，留空显示原链接"
+  },
+  "linkInvalidUrl": "请输入有效网址，例如 example.com",
+  "@linkInvalidUrl": {
+    "description": "仅加号链接表单校验格式，裸域名可用；正文中无效内容按普通文字处理，不显示此提示"
+  },
+  "saveLink": "保存",
+  "@saveLink": {
+    "description": "链接添加或修改对话框确认按钮"
+  },
+  "linkOpenFailed": "链接未能打开，请重试",
+  "@linkOpenFailed": {
+    "description": "平台无法打开链接时的错误，不改变或删除原附件"
+  },
+  "linkOnlySummary": "链接记录",
+  "@linkOnlySummary": {
+    "description": "历史列表无正文无反馈但有链接时的摘要"
   }
 }

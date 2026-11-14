@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/dream_editor/data/dream_repository.dart';
@@ -36,6 +37,7 @@ class InMemoryDreamRepository implements DreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     final normalizedDate = DreamEntry.dateOnly(date);
     final key = DreamEntry.dateKey(normalizedDate);
@@ -48,6 +50,7 @@ class InMemoryDreamRepository implements DreamRepository {
       content: content,
       feedback: feedback ?? existing?.feedback ?? const DailyFeedback(),
       images: List.unmodifiable(images ?? existing?.images ?? const []),
+      links: List.unmodifiable(links ?? existing?.links ?? const []),
       createdAt: existing?.createdAt ?? nowUtc,
       updatedAt: nowUtc,
     );

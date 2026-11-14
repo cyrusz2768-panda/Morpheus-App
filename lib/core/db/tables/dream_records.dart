@@ -35,6 +35,9 @@ class DreamRecords extends Table {
   /// v3 附件元数据；原始图片存于私有目录，旧记录默认无附件。
   TextColumn get images => text().withDefault(const Constant('[]'))();
 
+  /// v4 网页/音乐链接元数据；旧文字、反馈及图片引用保持原样。
+  TextColumn get links => text().withDefault(const Constant('[]'))();
+
   /// 主键由数据库强制唯一，而不只靠 Dart 代码“先检查有没有”。
   /// 即使同一天发生重复写入，SQLite 也不会产生两条相同日期的记录。
   @override

@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:drift/drift.dart';
 import 'package:morpheus/core/db/app_database.dart';
@@ -31,6 +32,7 @@ class DriftCalendarRepository implements ICalendarRepository {
         table.dreamDate,
         table.content,
         table.images,
+        table.links,
         table.dreamMood,
         table.sleepScore,
         table.sleepFactors,
@@ -50,6 +52,7 @@ class DriftCalendarRepository implements ICalendarRepository {
               (row) =>
                   row.read(table.content)!.trim().isNotEmpty ||
                   DreamImage.decode(row.read(table.images)!).isNotEmpty ||
+                  DreamLink.decode(row.read(table.links)!).isNotEmpty ||
                   row.read(table.dreamMood) != null ||
                   row.read(table.sleepScore) != null ||
                   (row.read(table.sleepFactors) ?? '[]') != '[]',

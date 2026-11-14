@@ -1,3 +1,6 @@
+import 'package:morpheus/features/dream_editor/domain/content_web_link.dart';
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
+import 'package:morpheus/features/dream_editor/data/link_opener.dart';
 import 'package:flutter/services.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/data/image_attachment_service.dart';
@@ -37,6 +40,8 @@ class DreamEditorController extends Notifier<DreamEditorState> {
   Completer<void>? _saveCompletion;
   bool _dateChangeInProgress = false;
   int _loadRequest = 0;
+  bool _linkOpenInProgress = false;
+  int get dateRevision => _loadRequest;
   Completer<void>? _imageTask;
   List<DreamImage> _persistedImages = const [];
   bool _hasPendingSelection = false;
@@ -181,6 +186,152 @@ class DreamEditorController extends Notifier<DreamEditorState> {
     _saveTimer = Timer(_saveDelay, saveNow);
   }
 
+  /// 表单打开时捕获所属日期；通知可能在表单期间切日，旧表单不能写进新日期。
+  /// 更新按稳定id替换，标题留空即清除；链接与正文/图片共用800ms串行队列。
+  bool putLink({
+    required DateTime date,
+    required int loadRevision,
+    String? id,
+    required String url,
+    required DreamLinkKind kind,
+    String? title,
+  }) {
+    if (!ref.mounted ||
+        !state.canEdit ||
+        state.isAdvancing ||
+        state.isAddingImages ||
+        _imageTask != null ||
+        _dateChangeInProgress ||
+        state.date != DreamEntry.dateOnly(date) ||
+        loadRevision != _loadRequest) {
+      return false;
+    }
+    if (id != null && !state.links.any((link) => link.id == id)) return false;
+    final link = DreamLink.create(id: id, url: url, kind: kind, title: title);
+    final links = [...state.links];
+    final index = links.indexWhere((item) => item.id == link.id);
+    if (index < 0) {
+      links.add(link);
+    } else {
+      links[index] = link;
+    }
+    _linksChanged(links);
+    return true;
+  }
+
+  void removeLink({
+    required DateTime date,
+    required int loadRevision,
+    required String id,
+  }) {
+    if (!ref.mounted ||
+        !state.canEdit ||
+        _dateChangeInProgress ||
+        state.isAddingImages ||
+        _imageTask != null ||
+        state.date != DreamEntry.dateOnly(date) ||
+        loadRevision != _loadRequest) {
+      return;
+    }
+    if (!state.links.any((link) => link.id == id)) return;
+    _linksChanged(state.links.where((link) => link.id != id).toList());
+  }
+
+  void _linksChanged(List<DreamLink> links) {
+    state = state.copyWith(
+      links: List.unmodifiable(links),
+      saveStatus: DreamSaveStatus.unsaved,
+      clearError: true,
+      clearAttachmentError: true,
+    );
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDelay, saveNow);
+  }
+
+  Future<bool> openLink({
+    required DateTime date,
+    required int loadRevision,
+    required DreamLink link,
+  }) => _openLinkTarget(
+    date: date,
+    loadRevision: loadRevision,
+    link: link,
+    isCurrent: () => state.links.any(
+      (item) =>
+          item.id == link.id && item.url == link.url && item.kind == link.kind,
+    ),
+  );
+
+  /// 正文链接只是文字的一部分，不额外写附件；点击前后都检查它仍在当前正文中。
+  Future<bool> openContentLink({
+    required DateTime date,
+    required int loadRevision,
+    required ContentWebLink match,
+  }) => _openLinkTarget(
+    date: date,
+    loadRevision: loadRevision,
+    link: DreamLink(
+      id: 'content:${match.start}:${match.end}',
+      url: match.uri.toString(),
+      kind: DreamLinkKind.web,
+    ),
+    isCurrent: () => ContentWebLinks.find(state.content).any(
+      (item) =>
+          item.start == match.start &&
+          item.end == match.end &&
+          item.text == match.text &&
+          item.uri == match.uri,
+    ),
+  );
+
+  Future<bool> _openLinkTarget({
+    required DateTime date,
+    required int loadRevision,
+    required DreamLink link,
+    required bool Function() isCurrent,
+  }) async {
+    if (!ref.mounted ||
+        !state.canEdit ||
+        _linkOpenInProgress ||
+        state.date != DreamEntry.dateOnly(date) ||
+        loadRevision != _loadRequest ||
+        !isCurrent()) {
+      return false;
+    }
+    _linkOpenInProgress = true;
+    final request = _loadRequest;
+    try {
+      // 外部音乐App会让本App进入后台；内嵌浏览器也遮住编辑器。先确认磁盘已保存。
+      if (!await flushPendingSave() ||
+          !ref.mounted ||
+          request != _loadRequest ||
+          state.date != DreamEntry.dateOnly(date) ||
+          loadRevision != _loadRequest) {
+        return false;
+      }
+      if (!isCurrent()) {
+        return false;
+      }
+      state = state.copyWith(clearAttachmentError: true);
+      final opened = await ref.read(linkOpenerProvider).open(link);
+      if (!opened && ref.mounted && request == _loadRequest) {
+        state = state.copyWith(
+          attachmentError: ref.read(appLocalizationsProvider).linkOpenFailed,
+        );
+      }
+      return opened;
+    } on Object {
+      if (ref.mounted && request == _loadRequest) {
+        state = state.copyWith(
+          attachmentError: ref.read(appLocalizationsProvider).linkOpenFailed,
+        );
+      }
+      return false;
+    } finally {
+      _linkOpenInProgress = false;
+    }
+  }
+
   /// 保留已有调用入口，但所有主动切换日期都必须先保护当前草稿。
   /// 新页面需要知道切换结果时应使用 [selectDate]。
   Future<void> load(DateTime date) async {
@@ -288,6 +439,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         content: entry?.content ?? '',
         feedback: entry?.feedback ?? const DailyFeedback(),
         images: entry?.images ?? const [],
+        links: entry?.links ?? const [],
         // 历史记录直接查看；当天未完成的流程重新从分类开始，正文始终保留。
         step:
             entry != null &&
@@ -419,6 +571,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         final dateToSave = state.date;
         final feedbackToSave = state.feedback;
         final imagesToSave = state.images;
+        final linksToSave = state.links;
 
         state = state.copyWith(
           saveStatus: DreamSaveStatus.saving,
@@ -428,6 +581,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         final repository = ref.read(dreamRepositoryProvider);
         if (contentToSave.trim().isEmpty &&
             imagesToSave.isEmpty &&
+            linksToSave.isEmpty &&
             !feedbackToSave.hasData &&
             !feedbackToSave.completed) {
           await repository.deleteByDate(dateToSave);
@@ -437,6 +591,7 @@ class DreamEditorController extends Notifier<DreamEditorState> {
             content: contentToSave,
             feedback: feedbackToSave,
             images: imagesToSave,
+            links: linksToSave,
           );
         }
 
@@ -475,7 +630,8 @@ class DreamEditorController extends Notifier<DreamEditorState> {
         // loop again with the newer content.
         if (state.content != contentToSave ||
             !identical(state.feedback, feedbackToSave) ||
-            !identical(state.images, imagesToSave)) {
+            !identical(state.images, imagesToSave) ||
+            !identical(state.links, linksToSave)) {
           _anotherSaveRequested = true;
           state = state.copyWith(saveStatus: DreamSaveStatus.unsaved);
         } else {

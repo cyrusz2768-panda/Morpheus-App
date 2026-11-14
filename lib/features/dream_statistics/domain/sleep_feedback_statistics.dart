@@ -12,7 +12,7 @@ class StatisticsRecord {
   });
   final DateTime date;
 
-  /// 正文或图片任一存在即有梦境内容；同日多图仍只贡献一个日期。
+  /// 正文、图片或链接任一存在即有梦境内容；同日多图仍只贡献一个日期。
   final bool hasContent;
   final DailyFeedback feedback;
 }
@@ -58,7 +58,7 @@ class WeeklyDreamStatus {
 }
 
 /// 所有反馈按醒来当天的日期聚合，只取本期截至今天的数据。
-/// 状态、评分、因素各用自己的有效样本，互不推算；活动日期包含正文或图片。
+/// 状态、评分、因素各用自己的有效样本，互不推算；活动日期包含正文、图片或链接。
 class SleepFeedbackStatistics {
   SleepFeedbackStatistics({
     required StatisticsWindow window,

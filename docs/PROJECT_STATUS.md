@@ -1,6 +1,6 @@
 # 项目状态与新对话交接
 
-更新日期：2026-11-13。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
+更新日期：2026-11-14。项目：夜行者 / Morpheus。本文记录当前状态；历史过程见 [开发日志](Log.md)，长期执行规则见 [AGENTS.md](../AGENTS.md)。后续任务结束时更新本文，不依赖旧聊天才能继续开发。
 
 ## 1. 当前结论
 
@@ -17,6 +17,20 @@
 | M5 | 真机回归、隐私完善与首轮内测发布 | 未完成；UI 打磨、正式身份与签名仍待安排 |
 
 ## 2. 代码与交付基线
+
+- **2026-11-14 用户确认网页/音乐链接及正文网址识别验收通过，授权上传。** 验收基线`8d71ee9`（链接功能`9df7109`），最终303项自动测试、格式、静态分析及Android ARM64/iOS模拟器调试构建已通过；本轮只补验收/交付文档与发布约定，不重复构建或操作模拟器，不扩大为Android人工验收或真机验证。172条中文资源已复核，无重复键且语境齐全；链接13项资源与本次2项修改均已接线，仅交付中文。
+- 用户明确今后默认使用已授权GitHub连接器发布相同内容并核对完整文件树与CI，不再尝试已知缺少HTTPS登录凭据的命令行推送。已同步AGENTS、README、项目规则与规格书；历史失败日志保留为历史。本轮工作区起始干净，连接器确认远程main仍为`56c15e7`，没有新增提交；以此为发布父提交，实际发布和CI结果核验后补记。下列“等待验收／不合并／不上传”均为此前开发阶段，已被本次确认覆盖。
+
+- **当前追加改进：正文网址识别（2026-11-13）**，基于本地链接提交`9df7109`，继续在`codex/dream-link-attachments`开发，起始工作区干净；fetch因HTTP/2网络失败，授权GitHub连接器确认远程main仍为`56c15e7`。正文网页格式标为主题紫色、短按App内打开，支持省略协议/www；无效格式不提示，原文不改写、不生成附件。加号表单同步接受裸域名；数据库仍v4、依赖不变、中文资源仍172条（更新2项及语境）。本轮先本地验证和iOS验收，不整合/上传。详细结果如下。
+
+- 2026-11-13最终工作区基于`9df7109`：`flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`全部通过（303项）；172条中文资源无重复、语境齐全，Markdown本地链接及`git diff --check`通过。无依赖或数据库定义变更，未重复pub恢复或Drift生成。
+
+- 最终Android ARM64调试构建`flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`通过（17.5秒）；iOS模拟器构建`flutter --no-version-check build ios --simulator --debug --no-pub`通过（29.4秒）。用已查询设备执行`xcrun simctl install`保留沙盒升级，`xcrun simctl launch --terminate-running-process`成功启动并实际显示App首页。验收窗口随后由用户操作进入App内网页，停止自动UI操作以免干扰；本轮未自动新增/修改/删除记录，正文点击、无效格式、长按/拖动由widget测试覆盖，不将其写成人工逐项验收通过。Android仅构建、真机未验收；本轮仍未合main、上传或触发CI。
+
+- **前一轮本地任务：网页与音乐链接附件（2026-11-13）**，基于`56c15e7`，分支`codex/dream-link-attachments`；起始工作区干净，fetch成功，远程main无新增提交。本轮按此前验收流程先本地开发和iOS验收，不合并/上传；图片此前发布不受影响。
+- 新增可选标题、打开/修改/删除，三行加号菜单；网页App内浏览，音乐优先系统关联软件、失败回内部网页，商店初始地址外跳。Android旧版非浏览器路由有原生兼容桥接。v4追加links元数据，旧文字/图片/反馈保留；仅链接也算记录并按日期去重。详见[链接附件](LINK_ATTACHMENTS_GUIDE.md)。最终292项测试、格式、分析与双端调试构建均通过；172条中文资源无重复键且语境齐全。
+- 2026-11-13 验证基线为`56c15e7`上的链接工作区：`flutter --no-version-check pub add url_launcher:^6.3.3`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`完成；`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`全部通过（292项）；`flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`、`flutter --no-version-check build ios --simulator --debug --no-pub`分别通过（59.6秒、30.4秒）。Android仅构建，真实音乐软件、商店重定向及旧Android原生候选路由未做真机验收。
+- iOS经`flutter --no-version-check devices`查询原设备，以`xcrun simctl install`保留沙盒升级并`xcrun simctl launch --terminate-running-process`启动；实际查看三行菜单、可选标题表单，在原为空的2026-10-01保存人工`Link test`（`https://www.example.com`）并看到“已保存”，点击后系统内嵌浏览器成功显示网页。自动化输入受模拟器输入法/键盘捕获干扰，未将重试过程写成产品故障；未手工删除附件或完成重开持久化，相关自动测试已通过。窗口停在App内网页供用户继续验收，左上角关闭可回记录；人工链接保留，未修改既有梦境或图片，未上传/触发CI。
 
 - **图片附件已发布到 main（2026-11-13）**：远程提交 [`821d8d3`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/821d8d33e7038dfe2c39eed3238b8722a48f5b31)，父提交 `2a69db0`；完整文件树 `8a3c225a974d81202b14b847ee525810b07323d4` 与本地交付提交 `e4484bc` 完全一致，43个文件逐项blob SHA一致。经已授权连接器更新main，未创建PR或强推；原本地历史保留在 `codex/dream-image-attachments`，本地main已按准确Git对象SHA对齐远程。
 - GitHub Actions [43377967034](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43377967034) 全部通过，包含依赖恢复、本地化/Drift生成、格式、分析与测试。沿用验收代码 `53d0236` 的本机270项测试和双端调试构建结果；CI本身不含原生构建或人工验收。本次发布后只补交付文档，以下“等待验收／尚未上传”为历史过程。
@@ -69,7 +83,7 @@
 | 应用与路由 | Flutter / Dart，Riverpod；`lib/app/router.dart` 包含 `/`、`/history`、`/search`、`/statistics`、`/calendar`、`/calendar-picker`、`/reminders` |
 | 梦境编辑 | 每天一条，分类／正文／主观评分／因素引导、结束回顾，800ms 自动保存、相册图片附件；`lib/features/dream_editor/` |
 | 草稿保护 | 串行保存、切日/导航前 flush、后台尽力提交；读失败禁用编辑，保存失败保留文字并重试 |
-| 本地数据库 | Drift / SQLite，版本 3，v1/v2 追加列保留旧数据，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
+| 本地数据库 | Drift / SQLite，版本 4，v1/v2/v3 追加列保留旧数据，私有支持目录 `nightwalker.sqlite`；`lib/core/db/`，`dream_editor/data/` |
 | 日期与历史 | 补记过去日期、倒序列表、回到今天；`lib/features/dream_history/` 与编辑器导航 |
 | 梦境搜索 | 首页 🔍、自动聚焦键盘、300ms 防抖正文连续匹配、结果选日；`lib/features/dream_search/`，详见 [搜索说明](SEARCH_GUIDE.md) |
 | 梦境月历 | 月份切换、记录圆点、快速选日，按月监听数据库；`lib/features/dream_calendar/` |
@@ -80,7 +94,7 @@
 | 每日提醒 | 分组卡片、独立消息通知开关、开启后展开时间、可延后授权与按需系统设置、点击回当天；`lib/features/reminders/` |
 | 每周统计回顾 | 默认关闭、周日 21:00，独立星期/时间与开关；点击打开最新自然周，见 [回顾通知说明](WEEKLY_REVIEW_GUIDE.md) |
 | 提醒配置 | 私有 JSON 原子保存，保留旧字段；系统权限实时重查，不永久信任旧权限状态 |
-| 界面文案 | 159 条中文 ARB，含图片附件、每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
+| 界面文案 | 172 条中文 ARB，含图片附件、每日记录、统计、底栏及回顾通知；页面、日期/读屏标签、Controller 提示与通知共用生成资源；`lib/l10n/`，见 [文案指南](LOCALIZATION_GUIDE.md) |
 | 自动检查 | `.github/workflows/flutter_checks.yml`：依赖恢复、代码生成、格式、静态分析、测试 |
 
 存储约定：本地 `yyyy-mm-dd` 日期主键，UTC 创建/更新时间；正文保留原格式，纯空白视为无正文；状态或睡眠反馈独立保留，无正文反馈、仅图片也进入历史与月历，图片同时计入统计活动。仅有完成标记的全跳过日期不展示历史圆点。当前数据库未加密。不要改包名、删除沙盒或重置模拟器来解决普通启动/升级故障。

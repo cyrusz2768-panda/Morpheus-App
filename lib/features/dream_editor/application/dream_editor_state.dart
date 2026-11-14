@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 
@@ -37,6 +38,7 @@ class DreamEditorState {
     this.content = '',
     this.feedback = const DailyFeedback(),
     this.images = const [],
+    this.links = const [],
     this.isAddingImages = false,
     this.attachmentError,
     this.step = DailyRecordStep.mood,
@@ -51,6 +53,7 @@ class DreamEditorState {
   final String content;
   final DailyFeedback feedback;
   final List<DreamImage> images;
+  final List<DreamLink> links;
   final bool isAddingImages;
   final String? attachmentError;
   final DailyRecordStep step;
@@ -77,6 +80,7 @@ class DreamEditorState {
     String? content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
     bool? isAddingImages,
     String? attachmentError,
     bool clearAttachmentError = false,
@@ -93,6 +97,7 @@ class DreamEditorState {
       content: content ?? this.content,
       feedback: feedback ?? this.feedback,
       images: images ?? this.images,
+      links: links ?? this.links,
       isAddingImages: isAddingImages ?? this.isAddingImages,
       attachmentError: clearAttachmentError
           ? null

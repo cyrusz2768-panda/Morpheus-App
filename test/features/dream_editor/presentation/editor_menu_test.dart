@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import '../../../helpers/daily_record_test_helper.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
@@ -348,6 +349,7 @@ class _DreamRepository extends InMemoryDreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     if (failSave) throw StateError('Scripted dream save failure');
     return super.save(date: date, content: content, feedback: feedback);

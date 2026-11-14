@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_statistics/domain/sleep_feedback_statistics.dart';
 import '../../helpers/daily_record_test_helper.dart';
@@ -388,6 +389,7 @@ class _Repository extends InMemoryDreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     if (failSave) throw StateError('测试保存失败');
     await saveGate?.future;

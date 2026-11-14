@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'dart:convert';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
@@ -51,6 +52,7 @@ class DriftDreamRepository implements DreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     // 省略 feedback 的旧调用只修改正文，保留当天已有反馈。
     // Controller 提交完整快照，确保清空正文不会连带删除评分和状态。
@@ -65,10 +67,14 @@ class DriftDreamRepository implements DreamRepository {
       final savedImages = List<DreamImage>.unmodifiable(
         images ?? existing?.images ?? const [],
       );
+      final savedLinks = List<DreamLink>.unmodifiable(
+        links ?? existing?.links ?? const [],
+      );
       final savedFeedback =
           feedback ?? existing?.feedback ?? const DailyFeedback();
       if (content.trim().isEmpty &&
           savedImages.isEmpty &&
+          savedLinks.isEmpty &&
           !savedFeedback.hasData &&
           !savedFeedback.completed) {
         throw ArgumentError('记录没有正文或反馈，请使用删除操作');
@@ -81,6 +87,7 @@ class DriftDreamRepository implements DreamRepository {
               dreamDate: key,
               content: content,
               images: Value(DreamImage.encode(savedImages)),
+              links: Value(DreamLink.encode(savedLinks)),
               dreamMood: Value(savedFeedback.mood?.name),
               sleepScore: Value(savedFeedback.sleepScore),
               sleepFactors: Value(
@@ -94,6 +101,7 @@ class DriftDreamRepository implements DreamRepository {
               (_) => DreamRecordsCompanion(
                 content: Value(content),
                 images: Value(DreamImage.encode(savedImages)),
+                links: Value(DreamLink.encode(savedLinks)),
                 dreamMood: Value(savedFeedback.mood?.name),
                 sleepScore: Value(savedFeedback.sleepScore),
                 sleepFactors: Value(
@@ -129,6 +137,7 @@ class DriftDreamRepository implements DreamRepository {
       dreamDate: DateTime.parse(row.dreamDate),
       content: row.content,
       images: DreamImage.decode(row.images),
+      links: DreamLink.decode(row.links),
       feedback: DailyFeedback(
         mood: DreamMood.values
             .where((e) => e.name == row.dreamMood)

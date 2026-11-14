@@ -1,6 +1,26 @@
 # 开发日志
 
+## 2026-11-14
+
+- 用户确认网页/音乐链接附件及正文网址识别“没有问题”，授权上传；验收基线`8d71ee9`，链接功能`9df7109`。沿用最终303项测试、格式、静态分析及双端调试构建结果，本轮只补验收/交付文档和规则，不重复构建或操作模拟器，不扩大Android/真机验收。复核172条中文资源及链接13项接线、2项修改，语境齐全、无重复，仅交付中文。
+- 按用户新规则直接使用已授权GitHub连接器，不再尝试已知缺少HTTPS凭据的命令行推送；AGENTS、README、项目规则和规格书同步更新。起始工作区干净，连接器确认main仍为`56c15e7`，没有远程新增提交；本地整合main后，以远程基线为父提交发布同一文件树，保留原本地功能历史，不创建PR、不强推。实际文件树与CI核验结果另记。
+
 ## 2026-11-13
+
+- 在本地链接提交`9df7109`追加正文网址识别，起始干净，继续原功能分支，验收前不合main/上传；fetch遇HTTP/2网络失败，授权连接器核对main仍为`56c15e7`。正文裸域名/完整HTTP(S)显示主题紫色，短按经原有保存保护和内部浏览器打开；无效格式静默，正文原样存储、不生成重复附件。加号表单支持省略协议与www，更新2项中文文案及语境，仍172条资源。无数据库/依赖变更。
+- 识别采用本地格式校验，不联网探测网页；保留UTF-16偏移、中文标点、成对路径括号和输入法组合片段。首次可编辑Span手势方案在专项测试触发Flutter语义断言，改为无手势高亮Span + Listener取落点 + TextField自身点击回调/字形盒命中，保留长按/拖动。测试另发现连续点击后按住仍可能回调onTap，增加长按时限与位移排除。旧版显式HTTP链接解码保持兼容，避免新增严格规则破坏旧记录。复核另补Uri延迟解析超长数字端口的FormatException保护。
+
+- 首次全量301项通过、2项测试配置/平台行为断言失败；改用TargetPlatformVariant隔离平台，并按iOS原生长按移动光标行为断言后，最终全量303项通过。2026-11-13最终工作区基于`9df7109`：`flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`全部通过（303项）；172条中文资源无重复、语境齐全，Markdown本地链接及`git diff --check`通过。无依赖或数据库定义变更，未重复pub恢复或Drift生成。
+
+- 最终Android ARM64调试构建`flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`通过（17.5秒）；iOS模拟器构建`flutter --no-version-check build ios --simulator --debug --no-pub`通过（29.4秒）。用已查询设备执行`xcrun simctl install`保留沙盒升级，`xcrun simctl launch --terminate-running-process`成功启动并实际显示App首页。验收窗口随后由用户操作进入App内网页，停止自动UI操作以免干扰；本轮未自动新增/修改/删除记录，正文点击、无效格式、长按/拖动由widget测试覆盖，不将其写成人工逐项验收通过。Android仅构建、真机未验收；本轮仍未合main、上传或触发CI。
+
+- 网页/音乐链接附件基于`56c15e7`，起始干净，fetch成功且远程main无更新；本地`codex/dream-link-attachments`开发，先验收不上传。新增类型/URL/可选标题及打开、修改、删除，三行加号菜单保持无框自然排版；仅链接也算记录，原正文搜索范围保持。
+- v4追加links JSON，保留v1/v2/v3升级链、文字/图片/UTC时间/反馈；链接共用800ms完整快照及串行保存。表单捕获日期与加载版本，打开前flush并复查，坏JSON与读失败不写入。新增官方url_launcher及平台依赖，原锁定依赖不升级；172条中文资源均随功能维护。
+- 系统App内浏览器承载网页，音乐HTTP(S)先尝试非浏览器App后回内部网页，直接商店网址外跳。Android7–10补原生非浏览器候选过滤；模式顺序测试不代表厂商音乐App已实测。无CustomTabs时WebView回退不拦截每次商店HTTP重定向，边界见链接说明。AppleMusic未来可接MusicKit App内播放，本轮不做播放器或音乐授权。
+- 原有270项回归通过；新增22项专项首次21项通过、1项在测试结束仍有防抖计时器，已补保存等待后重跑完整检查。最终结果随后记录，不将首次专项失败记为通过。
+- 链接本轮最终292项完整测试通过；`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`git diff --check`通过。`flutter --no-version-check pub add url_launcher:^6.3.3`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`完成，生成物不提交；172条ARB无重复键、语境齐全，新文档链接有效。
+- `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`与`flutter --no-version-check build ios --simulator --debug --no-pub`通过（59.6秒/30.4秒）。iOS使用实际设备查询、`xcrun simctl install`保留沙盒升级、`xcrun simctl launch --terminate-running-process`启动，实际查看三行菜单和表单，并在此前空白的2026-10-01保存人工`Link test`/`https://www.example.com`，看到已保存，点击后在App内浏览器显示网页。模拟器键盘捕获/输入法使自动输入反复纠正，未记录为功能故障；最后关闭键盘捕获，窗口留在内嵌网页供继续验收。
+- 本轮人工链接保留，未动既有文字/图片；未在模拟器手工删除或逐项重开持久化，未做音乐软件实际唤起、商店重定向、旧Android及真机测试。相关存储和模式顺序由自动测试覆盖，不扩大为实际平台验收。未收到最终用户验收确认，不合main、不上传GitHub或触发CI。
 
 - 图片附件已通过已授权GitHub连接器发布为 [`821d8d3`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/821d8d33e7038dfe2c39eed3238b8722a48f5b31)，父提交`2a69db0`；完整文件树`8a3c225a974d81202b14b847ee525810b07323d4`与本地`e4484bc`一致，43个文件逐项blob SHA核对通过。首次整树请求被GitHub以处理超时拒绝，改为逐文件对象上传；连接/审批超时的文件逐项重试成功后统一更新main，未上传图片/数据库/构建产物，未强推或创建PR。
 - [GitHub Actions 43377967034](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43377967034)依赖恢复、本地化/Drift生成、格式、静态分析及测试全部通过。本地main已校验准确Git提交对象后对齐远程，原本地历史保留于`codex/dream-image-attachments`。本轮此后仅补交付记录，沿用验收基线`53d0236`的270项测试与双端构建，不扩大Android/真机验收。

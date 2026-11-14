@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
@@ -10,7 +11,7 @@ abstract interface class DreamRepository {
   /// Reads the entry associated with [date], or returns null when none exists.
   Future<DreamEntry?> getByDate(DateTime date);
 
-  /// 返回有正文、图片或主观反馈的全部记录，按梦境日期从近到远排列，每个日期最多一条。
+  /// 返回有正文、图片、链接或主观反馈的全部记录，按梦境日期从近到远排列，每个日期最多一条。
   ///
   /// 排序依据是 dreamDate，而不是 updatedAt：今天补记上个月的梦，仍应出现在
   /// 上个月的位置。没有记录时返回空列表；读取失败仍向上传递异常，让页面显示
@@ -19,7 +20,7 @@ abstract interface class DreamRepository {
 
   /// Creates or updates the entry for [date].
   ///
-  /// 省略 images 保留原附件，传空列表才移除；只有图片也能独立保存。
+  /// 省略 images/links 保留原附件，传空列表才移除；只有图片或链接也能独立保存。
   /// M1 permits one entry per local calendar day, so this operation behaves as
   /// an "upsert": update if present, insert otherwise.
   Future<DreamEntry> save({
@@ -27,6 +28,7 @@ abstract interface class DreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   });
 
   /// Deletes the entry for [date]. Deleting a missing entry is harmless.

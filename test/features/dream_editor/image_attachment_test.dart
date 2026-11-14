@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -28,7 +29,7 @@ const image = DreamImage(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('真实 v2 升级 v3 保留原文反馈和时间；附件关闭重开后恢复，正文更新不删图片', () async {
+  test('真实 v2 升级当前版本保留原文反馈和时间；附件关闭重开后恢复，正文更新不删图片', () async {
     final dir = await Directory.systemTemp.createTemp(
       'morpheus_image_upgrade_',
     );
@@ -476,6 +477,7 @@ class ImageTestRepository extends InMemoryDreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     await _before();
     return super.save(
@@ -483,6 +485,7 @@ class ImageTestRepository extends InMemoryDreamRepository {
       content: content,
       feedback: feedback,
       images: images,
+      links: links,
     );
   }
 

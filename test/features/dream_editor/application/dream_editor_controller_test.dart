@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 import 'dart:async';
@@ -442,6 +443,7 @@ class _ScriptedRepository implements DreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     saveAttempts.add(content);
     saveDates.add(DreamEntry.dateOnly(date));
@@ -465,6 +467,7 @@ class _ScriptedRepository implements DreamRepository {
         content: content,
         feedback: feedback,
         images: images,
+        links: links,
       );
     } finally {
       _activeWrites -= 1;

@@ -1,3 +1,6 @@
+import 'package:morpheus/features/dream_editor/presentation/widgets/link_text_editing_controller.dart';
+import 'package:morpheus/features/dream_editor/presentation/widgets/dream_link_attachments.dart';
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/presentation/widgets/dream_image_attachments.dart';
 import 'package:morpheus/features/dream_editor/presentation/daily_feedback_text.dart';
 import 'package:flutter/material.dart';
@@ -139,7 +142,8 @@ class DailyRecordFlow extends StatelessWidget {
                 ),
                 if (state.feedback.hidesContent &&
                     (state.content.trim().isNotEmpty ||
-                        state.images.isNotEmpty))
+                        state.images.isNotEmpty ||
+                        state.links.isNotEmpty))
                   ExpansionTile(
                     key: const Key('daily-hidden-content'),
                     title: Text(l.dailyHiddenDream),
@@ -240,26 +244,37 @@ class DailyRecordFlow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          key: const Key('dream-content-field'),
+        ContentLinkTapRegion(
           controller: textController,
-          enabled: state.canEdit && !navigationBusy,
-          onChanged: controller.contentChanged,
-          minLines: 7,
-          maxLines: null,
-          textAlignVertical: TextAlignVertical.top,
-          keyboardType: TextInputType.multiline,
-          decoration: InputDecoration(
-            labelText: context.l10n.dreamContentLabel,
-            hintText: context.l10n.dreamContentHint,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
+          builder: (onTap) => TextField(
+            key: const Key('dream-content-field'),
+            onTap: onTap,
+            onTapAlwaysCalled: true,
+            controller: textController,
+            enabled: state.canEdit && !navigationBusy,
+            onChanged: controller.contentChanged,
+            minLines: 7,
+            maxLines: null,
+            textAlignVertical: TextAlignVertical.top,
+            keyboardType: TextInputType.multiline,
+            decoration: InputDecoration(
+              labelText: context.l10n.dreamContentLabel,
+              hintText: context.l10n.dreamContentHint,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+            ),
           ),
         ),
         DreamImageAttachments(
           images: state.images,
+          controller: controller,
+          enabled: enabled,
+        ),
+        DreamLinkAttachments(
+          links: state.links,
+          date: state.date,
           controller: controller,
           enabled: enabled,
         ),
@@ -273,10 +288,22 @@ class DailyRecordFlow extends StatelessWidget {
           ),
         Align(
           alignment: Alignment.centerLeft,
-          child: AddImageButton(
+          child: AddAttachmentButton(
             enabled: enabled,
             busy: state.isAddingImages,
-            onAdd: controller.addImage,
+            onAddImage: controller.addImage,
+            onAddWeb: () => showDreamLinkEditor(
+              context: context,
+              controller: controller,
+              date: state.date,
+              kind: DreamLinkKind.web,
+            ),
+            onAddMusic: () => showDreamLinkEditor(
+              context: context,
+              controller: controller,
+              date: state.date,
+              kind: DreamLinkKind.music,
+            ),
           ),
         ),
       ],

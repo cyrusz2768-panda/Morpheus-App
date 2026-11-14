@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -252,6 +253,7 @@ class _Repository extends InMemoryDreamRepository {
     required String content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
   }) async {
     final pending = gate;
     gate = null;

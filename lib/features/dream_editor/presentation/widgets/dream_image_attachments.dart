@@ -171,22 +171,26 @@ class _StoredImageState extends ConsumerState<_StoredImage> {
   }
 }
 
-/// 菜单锚点固定在加号上方，仅列出本轮支持的“添加图片”。
-class AddImageButton extends StatelessWidget {
-  const AddImageButton({
+/// 三行附件菜单锚点固定在加号上方；菜单总高度随字号变化，避免覆盖加号。
+class AddAttachmentButton extends StatelessWidget {
+  const AddAttachmentButton({
     super.key,
     required this.enabled,
     required this.busy,
-    required this.onAdd,
+    required this.onAddImage,
+    required this.onAddWeb,
+    required this.onAddMusic,
   });
   final bool enabled;
   final bool busy;
-  final VoidCallback onAdd;
+  final VoidCallback onAddImage;
+  final VoidCallback onAddWeb;
+  final VoidCallback onAddMusic;
   @override
   Widget build(BuildContext context) {
     final menuHeight = MediaQuery.textScalerOf(context).scale(20) + 28;
     return MenuAnchor(
-      alignmentOffset: Offset(0, -menuHeight - 8),
+      alignmentOffset: Offset(0, -menuHeight * 3 - 8),
       style: const MenuStyle(
         alignment: Alignment.topLeft,
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
@@ -195,9 +199,23 @@ class AddImageButton extends StatelessWidget {
         MenuItemButton(
           key: const Key('add-image-menu-item'),
           style: MenuItemButton.styleFrom(minimumSize: Size(160, menuHeight)),
-          onPressed: enabled ? onAdd : null,
+          onPressed: enabled ? onAddImage : null,
           leadingIcon: const Icon(Icons.image_outlined),
           child: Text(context.l10n.addImage),
+        ),
+        MenuItemButton(
+          key: const Key('add-web-link-menu-item'),
+          style: MenuItemButton.styleFrom(minimumSize: Size(160, menuHeight)),
+          onPressed: enabled ? onAddWeb : null,
+          leadingIcon: const Icon(Icons.link),
+          child: Text(context.l10n.addWebLink),
+        ),
+        MenuItemButton(
+          key: const Key('add-music-link-menu-item'),
+          style: MenuItemButton.styleFrom(minimumSize: Size(160, menuHeight)),
+          onPressed: enabled ? onAddMusic : null,
+          leadingIcon: const Icon(Icons.music_note_outlined),
+          child: Text(context.l10n.addMusicLink),
         ),
       ],
       builder: (context, menu, child) => IconButton(

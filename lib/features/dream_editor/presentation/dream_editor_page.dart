@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/presentation/widgets/link_text_editing_controller.dart';
 import 'package:morpheus/features/dream_editor/presentation/widgets/daily_record_flow.dart';
 import 'dart:async';
 
@@ -30,7 +31,7 @@ class DreamEditorPage extends ConsumerStatefulWidget {
 
 class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     with WidgetsBindingObserver {
-  final TextEditingController _textController = TextEditingController();
+  final LinkTextEditingController _textController = LinkTextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _menuHintQueued = false;
   bool _menuHintShown = false;
@@ -298,6 +299,20 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
         (ref.watch(dreamEditorControllerProvider).isAdvancing ||
             ref.watch(dreamEditorControllerProvider).isAddingImages);
     final editorState = ref.watch(dreamEditorControllerProvider);
+    final editorController = ref.read(dreamEditorControllerProvider.notifier);
+    final dateRevision = editorController.dateRevision;
+    _textController.onLinkTap = editorState.canEdit && !navigationBusy
+        ? (match) {
+            FocusManager.instance.primaryFocus?.unfocus();
+            unawaited(
+              editorController.openContentLink(
+                date: editorState.date,
+                loadRevision: dateRevision,
+                match: match,
+              ),
+            );
+          }
+        : null;
     final reminderState = ref.watch(reminderControllerProvider);
     _queueMenuHint(reminderState);
 

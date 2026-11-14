@@ -1,3 +1,4 @@
+import 'package:morpheus/features/dream_editor/domain/dream_link.dart';
 import 'package:morpheus/features/dream_editor/domain/dream_image.dart';
 import 'package:morpheus/features/dream_editor/domain/daily_feedback.dart';
 
@@ -16,6 +17,7 @@ class DreamEntry {
     required this.updatedAt,
     this.feedback = const DailyFeedback(),
     this.images = const [],
+    this.links = const [],
   });
 
   /// Stable identifier of this record.
@@ -38,8 +40,12 @@ class DreamEntry {
 
   final DailyFeedback feedback;
   final List<DreamImage> images;
+  final List<DreamLink> links;
   bool get hasData =>
-      content.trim().isNotEmpty || images.isNotEmpty || feedback.hasData;
+      content.trim().isNotEmpty ||
+      images.isNotEmpty ||
+      links.isNotEmpty ||
+      feedback.hasData;
 
   /// UTC instant at which the record was first created.
   final DateTime createdAt;
@@ -57,6 +63,7 @@ class DreamEntry {
     String? content,
     DailyFeedback? feedback,
     List<DreamImage>? images,
+    List<DreamLink>? links,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -66,6 +73,7 @@ class DreamEntry {
       content: content ?? this.content,
       feedback: feedback ?? this.feedback,
       images: images ?? this.images,
+      links: links ?? this.links,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

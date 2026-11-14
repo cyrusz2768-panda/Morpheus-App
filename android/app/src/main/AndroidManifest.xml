@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 内部网页浏览在正式包也需要网络访问；保存附件本身不联网。 -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ 仍须由用户在运行时明确允许；声明权限不会自动授权。 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 重启/升级后，由插件按已经保存的日程恢复提醒。 -->
@@ -54,6 +56,10 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- 查询系统内嵌浏览器（Custom Tabs）支持，避免误用外部浏览器。 -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
