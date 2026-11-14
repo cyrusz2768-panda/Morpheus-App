@@ -55,6 +55,9 @@ dependencies:
   image_picker: ^1.2.4
   # 官方系统内嵌浏览器与外部音乐App链接接口。
   url_launcher: ^6.3.3
+  # 系统分享面板与纯Dart二维码；相册保存由精简的平台桥接负责。
+  share_plus: ^13.3.1
+  qr: ^4.0.1
 
 dev_dependencies:
   flutter_test:

@@ -13,6 +13,8 @@ import 'package:morpheus/features/dream_editor/domain/dream_entry.dart';
 import 'package:morpheus/features/dream_editor/presentation/widgets/editor_menu_drawer.dart';
 import 'package:morpheus/features/dream_editor/presentation/widgets/menu_reminder_intro.dart';
 import 'package:morpheus/features/dream_history/application/dream_history_provider.dart';
+import 'package:morpheus/features/dream_export/domain/dream_export_data.dart';
+import 'package:morpheus/features/dream_export/presentation/dream_export_page.dart';
 import 'package:morpheus/features/reminders/application/reminder_controller.dart';
 import 'package:morpheus/l10n/app_text.dart';
 
@@ -241,6 +243,51 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
     if (mounted && !selected) _showNavigationFailure();
   }
 
+  Future<void> _openExport() async {
+    if (_isNavigating || !ref.read(dreamEditorControllerProvider).canEdit) {
+      return;
+    }
+    final activity = ref.read(navigationActivityProvider.notifier);
+    final token = activity.begin();
+    if (token == null) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isNavigating = true);
+    try {
+      // 分享也属于离开编辑器的操作：等待相册导入和串行写入结束，并再次
+      // 检查输入法在await间隙交付的末尾文字。失败时留在原页，不导出旧值。
+      do {
+        final saved = await ref
+            .read(dreamEditorControllerProvider.notifier)
+            .flushPendingSave();
+        if (!mounted || !activity.isCurrent(token)) return;
+        if (!saved) {
+          _showNavigationFailure();
+          return;
+        }
+      } while (ref.read(dreamEditorControllerProvider).hasPendingSave);
+      final state = ref.read(dreamEditorControllerProvider);
+      if (!state.canEdit) return;
+      final data = DreamExportData(
+        date: state.date,
+        content: state.content,
+        images: state.images,
+        links: state.links,
+      );
+      if (!data.hasContent) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.exportEmpty)));
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(builder: (context) => DreamExportPage(data: data)),
+      );
+    } finally {
+      activity.end(token);
+      if (mounted) setState(() => _isNavigating = false);
+    }
+  }
+
   void _showNavigationFailure() {
     final state = ref.read(dreamEditorControllerProvider);
     // 读写失败已有页面内错误和“重试”。额外 Snackbar 会盖住底部重试按钮，
@@ -379,6 +426,19 @@ class _DreamEditorPageState extends ConsumerState<DreamEditorPage>
             onPressed: navigationBusy || editorState.isLoading
                 ? null
                 : _openHistory,
+          ),
+          PopupMenuButton<String>(
+            key: const Key('record-more-actions'),
+            tooltip: context.l10n.recordMoreActions,
+            enabled: !navigationBusy && editorState.canEdit,
+            icon: const Icon(Icons.more_horiz),
+            onSelected: (_) => unawaited(_openExport()),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'full',
+                child: Text(context.l10n.shareFullRecord),
+              ),
+            ],
           ),
         ],
       ),

@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- 内部网页浏览在正式包也需要网络访问；保存附件本身不联网。 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 仅Android 9及更旧版本保存图片时使用；新系统通过MediaStore免权限写入。 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <!-- Android 13+ 仍须由用户在运行时明确允许；声明权限不会自动授权。 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 重启/升级后，由插件按已经保存的日程恢复提醒。 -->

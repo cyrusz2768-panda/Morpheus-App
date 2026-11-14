@@ -10,8 +10,15 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private val albumWriter by lazy { DreamAlbumWriter(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "morpheus/dream_export")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "saveToAlbum") albumWriter.save(call.argument<String>("path"), result)
+                else result.notImplemented()
+            }
         // Android 11起官方url_launcher可要求“只打开非浏览器App”。较旧系统
         // 没有这个Intent标记，普通ACTION_VIEW会把未安装音乐软件误判为打开成功。
         // 此桥接仅补旧系统缺口；网页浏览和新系统仍使用官方插件。
@@ -33,6 +40,13 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == DreamAlbumWriter.REQUEST_WRITE) {
+            albumWriter.permissionResult(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+        }
     }
 
     @Suppress("DEPRECATION")

@@ -18,6 +18,12 @@
 
 ## 2. 代码与交付基线
 
+- **2026-11-14 用户确认图片导出与分享“没问题，上传吧”**：iOS模拟器用户验收通过，包含`4becaec`的右侧小二维码调整（功能`9ffb8e0`）。沿用同一验收版本315项测试、静态分析、格式与双端调试构建；本轮只审校文案及补交付记录，不重复操作模拟器或扩大为Android/真机验收。195条中文资源无重复键、语境齐全，分享23项全部接线，仅交付中文。下面“等待验收/未上传”是历史开发阶段，已被本次确认覆盖。发布前连接器确认远程main仍为`a5a8010`；本地整合main后按此父提交发布一致文件树，实际远程树与CI结果交付时核验。
+
+- **图片导出验收调整（2026-11-14）**：在本地 `9ffb8e0` 上继续，工作区起始干净，连接器确认远程main仍为`a5a8010`。按用户截图改为左文右码：链接140px、底部160px，边长减半、面积四分之一；底部左栏仅“夜行者·Morpheus”和“扫描右侧二维码，查看日期与文字摘要”两行。同步调整中文资源，仍195条；密度超限的摘要可缩短，完整URL不截断，过密链接保留文字及提示。继续等待用户验收后再整合/发布。
+
+- **当前本地任务：图片导出与分享（2026-11-14）**，基于 `a5a8010`，分支 `codex/dream-image-export`，起始工作区干净；授权连接器确认远程 main 仍为 `a5a8010`。记录页右上角三个点 → 分享完整记录 → 长图预览 → 保存相册或系统分享；包含日期、原文、用户图片与网页/音乐标题和链接。当前无在线记录后端，底部二维码只编码日期与文字摘要，音乐/网页可单独扫码；不上传梦境。夜行卡片等推荐功能有内容后再加入。见 [图片导出与分享](IMAGE_EXPORT_GUIDE.md)。本轮先验证并打开 iOS 模拟器，等待用户验收后再整合 main、通过连接器发布和完成文案审校；此处不标为已验收或已发布。
+
 - **网页/音乐链接附件与正文网址识别已发布到main（2026-11-14）**：已授权GitHub连接器创建提交[`7640fb2`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/7640fb2adbb1bfe45a33fad5849f28bd4caa5a50)，父提交`56c15e7`；完整文件树`9dd0eb3613109932036ca78056a58cbef2e88857`与本地交付`f02240d`完全一致。远程递归树180个文件，52个变更文件逐项blob SHA及mode匹配。更新main时检查预期旧SHA、未强推或创建PR，未执行命令行远程推送。
 - [GitHub Actions 43552355340](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43552355340)全部通过，含依赖恢复、本地化/Drift生成、格式、静态分析和测试。CI不含双端原生构建或人工验收，沿用验收基线`8d71ee9`的本机303项及双端构建结果。本次后续只补发布记录和README验收状态，原本地历史保留于`codex/dream-link-attachments`，本地主线按准确Git对象SHA对齐远程；文档补交后的远程文件树和CI在交付时再次核验。
 
@@ -105,6 +111,18 @@
 当前身份为练习占位 `com.example.morpheus`，iOS 工程最低 15.0，Android SDK 基线沿用 Flutter 模板。正式发行身份、支持系统范围、证书和签名需单独确定。
 
 ## 4. 最近一次验证及其边界
+
+2026-11-14，`9ffb8e0` 上的二维码验收调整工作区：`flutter --no-version-check gen-l10n`、`dart format --output=none --set-exit-if-changed lib test`、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`全部通过（315项，含12项分享测试）；相同命令的Android ARM64/iOS模拟器调试构建通过（17.9秒/25.1秒），未变更依赖或schema。新增PNG像素检查确认右栏140/160px及连续行不重叠；使用`flutter --no-version-check test --no-pub test/features/dream_export --dart-define=EXPORT_QA_PATH=临时PNG路径 --reporter expanded`输出纯人工内容，macOS自带Vision独立解码3个二维码，2个URL及中文/emoji日期摘要正确。此结果不等于手机相机、第三方App或用户验收；未上传PNG、未触发CI。
+
+本轮iOS再次查询设备、保留沙盒升级安装并启动，实际通过历史进入截图对应旧日期，打开完整记录分享并滚到底部，确认链接二维码右置缩小、底部品牌与扫码提示两行在左、小二维码在右。窗口停在新版长图底部供用户继续验收；未新增/修改/删除记录或图片，未保存相册或对外发送，尚未收到用户最终验收确认。
+
+2026-11-14，`a5a8010` 上的 `codex/dream-image-export` 工作区：
+
+- `flutter --no-version-check pub add share_plus:^13.3.1 qr:^4.0.1`、`flutter --no-version-check gen-l10n`、`dart run build_runner build`完成；既有锁定依赖不升级，数据库仍v4。
+- `dart format --output=none --set-exit-if-changed lib test`（98文件）、`flutter --no-version-check analyze --no-pub`、`flutter --no-version-check test --no-pub --reporter expanded`全部通过（314项，含11项新增分享测试）。195条中文资源均有语境说明，最终文案审校待用户验收。
+- `flutter --no-version-check build apk --debug --target-platform android-arm64 --no-pub`最终通过（17.8秒；首次新依赖构建246.8秒）；`flutter --no-version-check build ios --simulator --debug --no-pub`通过（43.2秒）。使用已知SDK查新超时的跳过参数，不跳过真正检查。
+- `flutter --no-version-check devices`查询后，通过`xcrun simctl install`保留原沙盒升级，并用`xcrun simctl launch --terminate-running-process`启动。实际观察到新版右上角记录操作入口，随后用户自行操作，最终窗口显示“分享预览”、预览图、保存相册与系统分享；停止自动点击，留给用户验收。本轮没有自动新增/修改/删除梦境或图片，没有实际操作相册授权、相册保存或对外发送，不记为逐项人工验收通过。
+- Android未启动或人工验收，真机与实际第三方分享收发未验证；尚未整合main、上传或触发新CI。用户明确验收完成后再发布。
 
 | 日期 / 基线 | 检查 | 结果 |
 |---|---|---|

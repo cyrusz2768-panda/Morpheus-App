@@ -917,5 +917,97 @@
   "linkOnlySummary": "链接记录",
   "@linkOnlySummary": {
     "description": "历史列表无正文无反馈但有链接时的摘要"
+  },
+  "recordMoreActions": "记录操作",
+  "@recordMoreActions": {
+    "description": "记录页右上角三个点的读屏提示"
+  },
+  "shareFullRecord": "分享完整记录",
+  "@shareFullRecord": {
+    "description": "三个点菜单；生成日期、正文、图片与链接的长图"
+  },
+  "exportPreviewTitle": "分享预览",
+  "@exportPreviewTitle": {
+    "description": "梦境长图预览页标题"
+  },
+  "exportSaveAlbum": "保存相册",
+  "@exportSaveAlbum": {
+    "description": "把当前预览的PNG保存到系统相册"
+  },
+  "exportSystemShare": "系统分享",
+  "@exportSystemShare": {
+    "description": "打开系统分享面板，分享当前预览的PNG"
+  },
+  "exportPreparing": "正在生成长图…",
+  "@exportPreparing": {
+    "description": "异步读取私有图片、排版和编码时的提示"
+  },
+  "exportPrivacyNote": "长图包含本次记录的文字、图片与链接，请确认后分享。二维码仅包含日期与文字摘要，不会创建在线记录；音乐通过链接打开。",
+  "@exportPrivacyNote": {
+    "description": "预览页说明导出内容、二维码实际用途及音乐形式"
+  },
+  "exportEmpty": "这一天还没有可分享的文字、图片或链接。",
+  "@exportEmpty": {
+    "description": "空记录或仅睡眠反馈不能生成本轮长图"
+  },
+  "exportFailed": "长图生成失败，请重试。若有图片，请确认原图仍可查看。",
+  "@exportFailed": {
+    "description": "生成或读取附件失败，不静默跳过图片"
+  },
+  "exportTooLarge": "记录过长，暂时无法生成单张长图。请减少本次内容后重试。",
+  "@exportTooLarge": {
+    "description": "超过长图像素预算；不截断正文或裁掉图片"
+  },
+  "exportSaveFailed": "保存相册失败，请重试。",
+  "@exportSaveFailed": {
+    "description": "系统相册写入异常；不能显示保存成功"
+  },
+  "exportPermissionDenied": "未获得添加照片权限，请在系统设置中允许后重试。仍可使用系统分享。",
+  "@exportPermissionDenied": {
+    "description": "仅点击保存相册时请求权限；拒绝不会阻止分享"
+  },
+  "exportSaved": "已保存到相册",
+  "@exportSaved": {
+    "description": "系统确认相册写入成功后显示"
+  },
+  "exportShareFailed": "无法打开系统分享，请重试。",
+  "@exportShareFailed": {
+    "description": "平台分享调用失败；取消分享不显示失败或成功"
+  },
+  "exportQrHint": "扫描右侧二维码，查看日期与文字摘要",
+  "@exportQrHint": {
+    "description": "长图底部品牌下方第二行，右侧二维码离线提供日期与文字摘要，不承诺在线完整记录"
+  },
+  "exportBrand": "夜行者·Morpheus",
+  "@exportBrand": {
+    "description": "长图底部二维码左侧第一行的完整品牌文字"
+  },
+  "exportQrImageOnly": "本次记录的图片与链接请查看长图。",
+  "@exportQrImageOnly": {
+    "description": "无正文时二维码中的说明文字"
+  },
+  "exportExcerptEllipsis": "…",
+  "@exportExcerptEllipsis": {
+    "description": "UTF-8字节限额下二维码摘要省略标记，不截断图片正文"
+  },
+  "exportMusicLabel": "音乐链接",
+  "@exportMusicLabel": {
+    "description": "长图音乐区域标题"
+  },
+  "exportWebLabel": "网页链接",
+  "@exportWebLabel": {
+    "description": "长图普通链接区域标题"
+  },
+  "exportLinkQrHint": "扫描右侧二维码，打开链接",
+  "@exportLinkQrHint": {
+    "description": "长图链接左栏提示语，指向同一行右侧的小二维码"
+  },
+  "exportLinkTooLong": "链接过长，请从长图中复制网址打开。",
+  "@exportLinkTooLong": {
+    "description": "链接超过紧凑二维码的清晰度容量时保留完整网址，不截断URL或绘制过密的码"
+  },
+  "exportImageLabel": "梦境长图预览",
+  "@exportImageLabel": {
+    "description": "预览图读屏说明，可滚动和双指缩放"
   }
 }

@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>选择图片，附加到你的梦境记录。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>将你预览并确认的梦境长图保存到相册。</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
