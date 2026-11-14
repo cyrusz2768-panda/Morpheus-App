@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+网页/音乐链接附件与正文网址识别已通过已授权连接器发布为[`7640fb2`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/7640fb2adbb1bfe45a33fad5849f28bd4caa5a50)，完整文件树与本地交付`f02240d`一致，52个变更文件逐项核对；[GitHub Actions 43552355340](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43552355340)全部通过。现行规则已改为直接使用连接器发布并核对远程树/CI，本轮未尝试命令行推送。以下“待验收/待发布”为历史阶段。
+
 2026-11-14 用户确认网页/音乐链接附件与正文网址识别的iOS验收通过并授权上传，验收基线`8d71ee9`；303项测试、格式、静态分析及双端构建通过。中文资源172条完成复核。本轮直接使用已授权GitHub连接器发布同一文件树并核对CI，今后不再尝试缺少HTTPS凭据的命令行推送；发布结果实际核验后补记。下列“本地待验收／尚未上传”属于历史开发过程。
 
 图片附件及展开布局已通过授权连接器发布为 [`821d8d3`](https://github.com/cyrusz2768-panda/Morpheus-App/commit/821d8d33e7038dfe2c39eed3238b8722a48f5b31)，完整文件树与已验证本地版本一致，[GitHub Actions 43377967034](https://github.com/cyrusz2768-panda/Morpheus-App/actions/runs/43377967034)全部通过。中文资源159条已审校；命令行push因缺少HTTPS登录凭据失败，本次不将连接器发布记为命令行push成功。
